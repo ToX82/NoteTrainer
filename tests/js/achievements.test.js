@@ -137,3 +137,38 @@ test('every definition has a matching test predicate', () => {
         assert.ok(def.id && def.title && def.desc, 'malformed definition ' + JSON.stringify(def));
     });
 });
+
+// ── Reading ───────────────────────────────────────────────────────────
+
+const unlockedIds = (c) => evaluate(c, []).map(a => a.id);
+
+test('gold on a reading study unlocks the reader award', () => {
+    const ids = unlockedIds({
+        sessionType: 'reading',
+        result: { correct: 12, wrong: 0, accuracy: 1, bestCombo: 12, medal: 'gold' },
+        medals: { 'reading:3': 'gold' },
+        lifetime: { correct: 12, wrong: 0, sessions: 1 },
+    });
+    assert.ok(ids.includes('reading_gold'));
+});
+
+test('a fretboard gold is not a reading gold', () => {
+    const ids = unlockedIds({
+        sessionType: 'fret',
+        result: { correct: 12, wrong: 0, accuracy: 1, bestCombo: 12, medal: 'gold' },
+        medals: { 2: 'gold' },
+        lifetime: { correct: 12, wrong: 0, sessions: 1 },
+    });
+    assert.ok(!ids.includes('reading_gold'));
+});
+
+test('passing the sight-reading study is its own award', () => {
+    const base = {
+        sessionType: 'reading',
+        result: { correct: 12, wrong: 4, accuracy: 0.75, bestCombo: 5, promoted: true },
+        medals: {}, lifetime: { correct: 12, wrong: 4, sessions: 1 },
+    };
+    assert.ok(unlockedIds(Object.assign({ readingKind: 'sight' }, base)).includes('sight_read'));
+    // The same score on a study answered with buttons is not sight-reading.
+    assert.ok(!unlockedIds(Object.assign({ readingKind: 'name' }, base)).includes('sight_read'));
+});

@@ -5,7 +5,8 @@
  * routes.py does four things; each has a replacement here:
  *   GET  /config, POST /config   -> localStorage (per-browser progress)
  *   GET  /tunings                -> data/tunings.json         (extracted by tools/sync.py)
- *   GET  /levels, /rhythm-levels -> data/*.json               (copied by tools/sync.py)
+ *   GET  /levels, /rhythm-levels,
+ *        /reading-levels         -> data/*.json               (copied by tools/sync.py)
  *   GET  /utils/*.js, /workers/* -> the files next to this page
  *
  * The plugin builds absolute URLs ('/api/plugins/note-trainer/…'), which on
@@ -35,9 +36,9 @@
             .then((r) => (r.ok ? r.json() : Promise.reject(new Error(file))));
         _dataPromise = Promise.all([
             get('default-config.json'), get('tunings.json'),
-            get('levels.json'), get('rhythm-levels.json'),
-        ]).then(([defaults, tunings, levels, rhythmLevels]) =>
-            ({ defaults, tunings, levels, rhythmLevels }));
+            get('levels.json'), get('rhythm-levels.json'), get('reading-levels.json'),
+        ]).then(([defaults, tunings, levels, rhythmLevels, readingLevels]) =>
+            ({ defaults, tunings, levels, rhythmLevels, readingLevels }));
         return _dataPromise;
     }
 
@@ -102,6 +103,7 @@
         if (path === '/tunings') return json({ tunings: data.tunings });
         if (path === '/levels') return json({ levels: data.levels });
         if (path === '/rhythm-levels') return json({ levels: data.rhythmLevels });
+        if (path === '/reading-levels') return json({ levels: data.readingLevels });
         if (path === '/config') {
             const method = ((init && init.method) || 'GET').toUpperCase();
             if (method === 'GET') return json(readConfig(data.defaults));

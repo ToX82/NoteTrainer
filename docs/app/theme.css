@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════
    Note Trainer — Musician Studio theme.
    Paint and shape over app/base.css. Section accents follow the active
-   game: Tempo (rhythm), Manico (fret), Orecchio (ear).
+   game: Tempo (rhythm), Manico (fret), Orecchio (ear), Pagina (reading).
    ═══════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -32,6 +32,11 @@
   --ms-orecchio: #8E24AA;
   --ms-orecchio-dark: #6A1B9A;
   --ms-orecchio-light: #F3E5F5;
+
+  /* Pagina = Ink Amber — the printed page, the fourth pillar */
+  --ms-pagina: #EA8C00;
+  --ms-pagina-dark: #B45309;
+  --ms-pagina-light: #FFF4E3;
 
   /* Semantic */
   --ms-ok: #10B981;
@@ -97,6 +102,10 @@
   --ms-orecchio: #B388FF;
   --ms-orecchio-dark: #7C4DFF;
   --ms-orecchio-light: rgba(179, 136, 255, 0.15);
+
+  --ms-pagina: #FBBF24;
+  --ms-pagina-dark: #D97706;
+  --ms-pagina-light: rgba(251, 191, 36, 0.15);
 
   --ms-ok: #34D399;
   --ms-ok-dark: #10B981;
@@ -252,6 +261,10 @@ body.nt-page-settings {
 .nt-lang-select:hover { border-color: var(--ms-line-2); color: var(--ms-text); }
 
 /* Narrow: the brand keeps its mark, the wording steps aside. */
+@media (max-width: 1080px) {
+  .nt-game-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 900px) {
   .nt-topbar { padding: 0 14px; gap: 10px; }
   .nt-topbar-name { display: none; }
@@ -335,6 +348,11 @@ body.nt-page-settings {
   --ms-accent: var(--ms-orecchio);
   --ms-accent-dark: var(--ms-orecchio-dark);
   --ms-accent-soft: var(--ms-orecchio-light);
+}
+.note-trainer-root.is-game-reading {
+  --ms-accent: var(--ms-pagina);
+  --ms-accent-dark: var(--ms-pagina-dark);
+  --ms-accent-soft: var(--ms-pagina-light);
 }
 
 :root[data-theme="dark"] .note-trainer-root { color-scheme: dark; }
@@ -457,8 +475,8 @@ body.nt-page-settings {
 
 .nt-game-picker {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
 }
 .nt-game-card {
   flex: none;
@@ -514,6 +532,7 @@ body.nt-page-settings {
    stacking has to come from the panel, not from the card around it. */
 .note-trainer-root.is-game-fret .nt-deck-card #nt-deck-fret,
 .note-trainer-root.is-game-ear .nt-deck-card #nt-deck-ear,
+.note-trainer-root.is-game-reading .nt-deck-card #nt-deck-reading,
 .note-trainer-root.is-game-rhythm .nt-deck-card #nt-deck-rhythm {
   display: flex;
   flex-direction: column;
@@ -540,6 +559,7 @@ body.nt-page-settings {
 }
 .note-trainer-root.is-game-fret #nt-tip-fret,
 .note-trainer-root.is-game-ear #nt-tip-ear,
+.note-trainer-root.is-game-reading #nt-tip-reading,
 .note-trainer-root.is-game-rhythm #nt-tip-rhythm {
   display: flex;
 }
@@ -768,6 +788,7 @@ body.nt-page-settings {
 /* Same density as the Musician Studio mockup. */
 .nt-levels,
 .nt-ear-levels,
+.nt-reading-levels,
 .nt-rhythm-levels {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -791,8 +812,13 @@ body.nt-page-settings {
   .nt-ear-levels { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 1080px) {
+  .nt-game-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 900px) {
   .nt-game-picker { grid-template-columns: 1fr; }
+  .nt-reading-levels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .nt-workspace { grid-template-columns: 1fr; }
   .nt-control-deck { position: static; }
   .nt-rhythm-levels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -841,6 +867,11 @@ body.nt-page-settings {
   border-color: var(--ms-manico);
   border-bottom-color: var(--ms-manico-dark);
   background: var(--ms-manico-light);
+}
+.nt-game-card[data-accent="reading"].active {
+  border-color: var(--ms-pagina);
+  border-bottom-color: var(--ms-pagina-dark);
+  background: var(--ms-pagina-light);
 }
 .nt-game-card[data-accent="ear"].active {
   border-color: var(--ms-orecchio);
@@ -907,6 +938,7 @@ body.nt-page-settings {
 .nt-game-card[data-accent="rhythm"].active .nt-gc-mastery { color: var(--ms-tempo); }
 .nt-game-card[data-accent="fret"].active .nt-gc-mastery { color: var(--ms-manico); }
 .nt-game-card[data-accent="ear"].active .nt-gc-mastery { color: var(--ms-orecchio); }
+.nt-game-card[data-accent="reading"].active .nt-gc-mastery { color: var(--ms-pagina-dark); }
 .nt-game-card.active .nt-gc-mastery {
   background: var(--ms-card);
   border-color: transparent;
@@ -928,6 +960,7 @@ body.nt-page-settings {
 .nt-game-card[data-accent="rhythm"] .nt-gc-icon { color: var(--ms-tempo); }
 .nt-game-card[data-accent="fret"] .nt-gc-icon { color: var(--ms-manico); }
 .nt-game-card[data-accent="ear"] .nt-gc-icon { color: var(--ms-orecchio); }
+.nt-game-card[data-accent="reading"] .nt-gc-icon { color: var(--ms-pagina); }
 
 .nt-game-card.active .nt-gc-icon {
   background: var(--ms-card);
@@ -936,6 +969,7 @@ body.nt-page-settings {
 .nt-game-card[data-accent="rhythm"].active .nt-gc-icon { color: var(--ms-tempo); }
 .nt-game-card[data-accent="fret"].active .nt-gc-icon { color: var(--ms-manico); }
 .nt-game-card[data-accent="ear"].active .nt-gc-icon { color: var(--ms-orecchio); }
+.nt-game-card[data-accent="reading"].active .nt-gc-icon { color: var(--ms-pagina); }
 .nt-gc-icon .nt-ic { width: 24px; height: 24px; }
 
 .nt-lc-chip {
@@ -956,6 +990,7 @@ body.nt-page-settings {
 /* Number on its own line, then the name, then one quiet line of detail —
    three short beats instead of a paragraph of chips. */
 .nt-ear-levels .nt-level-card,
+.nt-reading-levels .nt-level-card,
 .nt-rhythm-levels .nt-level-card,
 #nt-levels .nt-level-card {
   display: flex;
@@ -966,10 +1001,12 @@ body.nt-page-settings {
   background: var(--ms-card-subtle);
 }
 .nt-ear-levels .nt-level-card.active,
+.nt-reading-levels .nt-level-card.active,
 .nt-rhythm-levels .nt-level-card.active,
 #nt-levels .nt-level-card.active { background: var(--ms-accent-soft); }
 
 .nt-ear-levels .nt-lc-num,
+.nt-reading-levels .nt-lc-num,
 .nt-rhythm-levels .nt-lc-num {
   display: flex;
   align-items: center;
@@ -984,12 +1021,14 @@ body.nt-page-settings {
   font-weight: 800;
 }
 .nt-ear-levels .nt-level-card.active .nt-lc-num,
+.nt-reading-levels .nt-level-card.active .nt-lc-num,
 .nt-rhythm-levels .nt-level-card.active .nt-lc-num {
   background: var(--ms-card);
   border-color: var(--ms-line);
   color: var(--ms-muted);
 }
 .nt-ear-levels .nt-lc-title,
+.nt-reading-levels .nt-lc-title,
 .nt-rhythm-levels .nt-lc-title,
 #nt-levels .nt-lc-title {
   font-family: var(--ms-font);
@@ -1019,6 +1058,7 @@ body.nt-page-settings {
 /* One meta line per study: what it is on the left, what you scored on the
    right — so a grid of ten reads down a single column of numbers. */
 .nt-ear-levels .nt-lc-foot,
+.nt-reading-levels .nt-lc-foot,
 .nt-rhythm-levels .nt-lc-foot {
   display: flex;
   align-items: center;
@@ -1631,4 +1671,272 @@ body.has-input-hint .note-trainer-root { padding-top: 100px; }
 .note-trainer-fb-mark.is-detected circle {
   fill: color-mix(in srgb, var(--ms-accent) 30%, transparent);
   stroke: var(--ms-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   La Pagina — reading the staff.
+   The staff is drawn by utils/staff.js as bare geometry with classes on
+   it; every colour it has is here, which is what makes it follow the
+   light and dark palettes like everything else.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.note-trainer-staff-svg {
+  display: block;
+  height: 168px;
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow: visible;
+}
+/* A phrase to be read in time uses the whole panel instead. */
+.note-trainer-staff-svg.is-wide { width: 100%; height: auto; }
+
+/* Staff lines are ink, not furniture: they are the ruler every note is read
+   against, so they are the text colour thinned down rather than a border grey
+   that disappears next to a black notehead. */
+.note-trainer-staff-line,
+.note-trainer-staff-ledger {
+  stroke: color-mix(in srgb, var(--ms-text) 66%, transparent);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+.note-trainer-staff-bar {
+  stroke: color-mix(in srgb, var(--ms-text) 66%, transparent);
+  stroke-width: 2.4;
+}
+
+.note-trainer-staff-clef path {
+  fill: none;
+  stroke: var(--ms-text);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.note-trainer-staff-dot { fill: var(--ms-text); }
+
+.note-trainer-staff-head { fill: var(--ms-text); }
+.note-trainer-staff-head.is-hollow {
+  fill: var(--ms-card);
+  stroke: var(--ms-text);
+  stroke-width: 2.8;
+}
+.note-trainer-staff-stem,
+.note-trainer-staff-flag {
+  stroke: var(--ms-text);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  fill: none;
+}
+.note-trainer-staff-acc path {
+  fill: none;
+  stroke: var(--ms-text);
+  stroke-width: 2.3;
+  stroke-linecap: round;
+}
+.note-trainer-staff-timesig {
+  fill: var(--ms-text);
+  font-family: var(--ms-display);
+  font-size: 27px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+.note-trainer-staff-label {
+  fill: var(--ms-muted);
+  font-family: var(--ms-font);
+  font-size: 15px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+.note-trainer-staff-playhead {
+  stroke: var(--ms-pagina);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* Verdicts. The notehead is what changes colour — the note that was read,
+   not the panel around it, because that is what the player was looking at. */
+.note-trainer-staff-note { transition: opacity .16s ease; }
+.note-trainer-staff-note.is-ok .note-trainer-staff-head { fill: var(--ms-ok); }
+.note-trainer-staff-note.is-ok .note-trainer-staff-head.is-hollow { fill: var(--ms-card); stroke: var(--ms-ok); }
+.note-trainer-staff-note.is-ok .note-trainer-staff-stem,
+.note-trainer-staff-note.is-ok .note-trainer-staff-flag { stroke: var(--ms-ok); }
+.note-trainer-staff-note.is-err .note-trainer-staff-head { fill: var(--ms-err); }
+.note-trainer-staff-note.is-err .note-trainer-staff-head.is-hollow { fill: var(--ms-card); stroke: var(--ms-err); }
+.note-trainer-staff-note.is-err .note-trainer-staff-stem,
+.note-trainer-staff-note.is-err .note-trainer-staff-flag { stroke: var(--ms-err); }
+.note-trainer-staff-note.is-active .note-trainer-staff-head { fill: var(--ms-pagina); }
+.note-trainer-staff-note.is-active .note-trainer-staff-stem,
+.note-trainer-staff-note.is-active .note-trainer-staff-flag { stroke: var(--ms-pagina); }
+/* The answer the player did not give, shown where it would have been. */
+.note-trainer-staff-note.is-ghost { opacity: 0.42; }
+.note-trainer-staff-note.is-ghost .note-trainer-staff-head { fill: var(--ms-ok); }
+.note-trainer-staff-note.is-ghost .note-trainer-staff-stem { stroke: var(--ms-ok); }
+/* An anchor offered as a hint is not an answer, so it is not green. */
+.note-trainer-staff-note.is-ghost.is-anchor { opacity: 0.6; }
+.note-trainer-staff-note.is-ghost.is-anchor .note-trainer-staff-head { fill: var(--ms-pagina); }
+.note-trainer-staff-note.is-ghost.is-anchor .note-trainer-staff-stem { stroke: var(--ms-pagina); }
+.note-trainer-staff-note.is-ghost.is-anchor .note-trainer-staff-label { fill: var(--ms-pagina-dark); }
+
+.note-trainer-staff-note.is-ok .note-trainer-staff-head,
+.note-trainer-staff-note.is-err .note-trainer-staff-head {
+  animation: nt-note-pop .3s var(--nt-ease, cubic-bezier(.2,.8,.3,1));
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes nt-note-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+/* ── Setup panel ──────────────────────────────────────────────────── */
+.nt-read-preview {
+  background: var(--ms-card-subtle);
+  border: 2px solid var(--ms-line);
+  border-radius: var(--ms-r-md);
+  padding: 8px 12px 10px;
+}
+.nt-read-preview .note-trainer-staff-svg { height: 118px; }
+.nt-read-preview-caption {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ms-muted);
+}
+/* The deck's live hint highlights the line the clef names, so the emphasis
+   belongs to this section's accent — the shared rule paints it success-green,
+   which would read as a verdict. */
+#nt-reading-clef-note b { color: var(--ms-pagina-dark); }
+
+/* ── Play view ────────────────────────────────────────────────────── */
+.nt-read-ask {
+  font-family: var(--ms-display);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--ms-text);
+}
+.nt-read-stage { gap: 18px; }
+/* The frame hugs the staff instead of running the width of the panel: a
+   music example is an object on the page, not a banner across it. */
+.nt-read-staff {
+  align-self: center;
+  width: auto;
+  max-width: 100%;
+  padding: 10px 18px;
+  border-radius: var(--ms-r-lg);
+  background: var(--ms-card-subtle);
+  border: 2px solid var(--ms-line);
+}
+.note-trainer-root.is-read-sight .nt-read-staff { align-self: stretch; width: 100%; }
+.nt-read-heard { font-size: 13px; font-weight: 600; color: var(--ms-muted); }
+.nt-read-heard b { color: var(--ms-text); font-family: var(--nt-mono); }
+
+.nt-read-choices { gap: 12px; }
+/* Higher / lower and step / skip are two big targets, not a keypad: the
+   answer is a shape, and the button should look like one. */
+.nt-read-choices .nt-choice.is-contour {
+  /* Words, not note names — the mono face is reserved for pitches. */
+  font-family: var(--ms-font);
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 128px;
+  padding: 14px 20px;
+}
+.nt-read-choices .nt-ch-glyph {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ms-pagina-dark);
+  font-weight: 700;
+}
+.nt-read-choices .nt-choice.correct .nt-ch-glyph { color: var(--ms-ok-dark); }
+.nt-read-choices .nt-choice.wrong .nt-ch-glyph { color: var(--ms-err-dark); }
+
+.nt-read-neck {
+  border-radius: var(--ms-r-md);
+  overflow: hidden;
+  animation: nt-fade-in var(--nt-dur-base, .18s) ease;
+}
+
+/* ── The explanation cards ────────────────────────────────────────── */
+.nt-lesson { gap: 18px; padding: 30px 24px; }
+.nt-lesson-title {
+  font-family: var(--ms-display);
+  font-size: 23px;
+  font-weight: 600;
+  color: var(--ms-text);
+  letter-spacing: -0.01em;
+}
+.nt-lesson-body {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ms-muted);
+}
+/* The figure is the argument; the words are the caption. So it is framed and
+   given room, the same frame a question gets. */
+.nt-lesson-figure {
+  padding: 12px 20px;
+  border-radius: var(--ms-r-lg);
+  background: var(--ms-card-subtle);
+  border: 2px solid var(--ms-line);
+  align-self: center;
+  width: auto;
+  max-width: 100%;
+}
+.nt-lesson-figure .note-trainer-staff-svg { height: 150px; }
+.nt-lesson-figure .note-trainer-staff-svg.is-wide { width: 100%; height: auto; }
+
+.nt-lesson-dots .nt-ldot {
+  width: 8px; height: 8px; border-radius: 99px;
+  background: var(--ms-segment);
+  transition: background .16s ease, width .16s ease;
+}
+.nt-lesson-dots .nt-ldot.is-done { background: var(--ms-pagina-dark); }
+.nt-lesson-dots .nt-ldot.is-now { background: var(--ms-pagina); width: 22px; }
+
+.nt-lesson-actions .nt-btn { min-width: 150px; }
+/* The way out is always on screen and never the loud one: a player who knows
+   this already should not have to hunt for the exit, or feel nudged to skip. */
+.nt-lesson-actions .nt-btn.secondary { font-weight: 600; }
+
+/* Back sits apart from the pair that moves you forward. */
+.nt-lesson-actions .nt-btn.nt-lesson-back { min-width: 0; padding: 0 16px; }
+
+/* The hint. Available, never loud — a player who does not need it should not
+   be invited to use it, and one who does should not have to look. */
+.nt-read-hint {
+  min-height: 34px;
+  padding: 0 16px;
+  font-size: 12.5px;
+  font-weight: 700;
+  gap: 7px;
+}
+.nt-read-hint:disabled { opacity: 0.4; cursor: default; }
+
+/* The rule a direction question is measured against. */
+.note-trainer-staff-guide {
+  stroke: var(--ms-pagina);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+  opacity: 0.85;
+}
+
+/* The lesson bar. Duolingo's one genuinely good idea: a lesson you can see
+   the end of is a lesson people finish. */
+.nt-read-pips .nt-pip { background: var(--ms-segment); }
+.nt-read-pips .nt-pip.is-ok { background: var(--ms-ok); }
+.nt-read-pips .nt-pip.is-err { background: var(--ms-err); }
+.nt-read-pips .nt-pip.is-now {
+  background: var(--ms-pagina);
+  animation: nt-pip-breathe 1.6s ease-in-out infinite;
+}
+@keyframes nt-pip-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nt-read-pips .nt-pip.is-now { animation: none; }
+  .note-trainer-staff-note.is-ok .note-trainer-staff-head,
+  .note-trainer-staff-note.is-err .note-trainer-staff-head { animation: none; }
+  .nt-read-neck { animation: none; }
 }

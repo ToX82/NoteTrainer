@@ -3,6 +3,8 @@ window.noteTrainerUtils = [
     "note-math.js",
     "game.js",
     "ear.js",
+    "reading.js",
+    "staff.js",
     "rhythm.js",
     "rhythm-view.js",
     "onset.js",

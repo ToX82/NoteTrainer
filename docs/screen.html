@@ -17,6 +17,7 @@
     <symbol id="nt-i-x" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></symbol>
     <symbol id="nt-i-alert" viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v4"/><path d="M12 17h.01"/></symbol>
     <symbol id="nt-i-rhythm" viewBox="0 0 24 24"><path d="M2 12h3l2.5-7 4 14 3-9 1.5 2H22"/></symbol>
+    <symbol id="nt-i-staff" viewBox="0 0 24 24"><path d="M2 6h20"/><path d="M2 10h20"/><path d="M2 14h20"/><path d="M2 18h20"/><ellipse class="is-fill" cx="9" cy="14" rx="3" ry="2.2"/><path d="M12 14V5"/></symbol>
   </svg>
 
   <!-- The brand, the progress chips and the Exit button live in the page's top
@@ -63,6 +64,24 @@
           <div class="nt-levels nt-ear-levels" id="nt-ear-levels"></div>
           <p class="nt-ear-intro" id="nt-ear-intro" data-i18n="ear.intro">A reference "home" note plays, then a mystery note — name what you heard from the buttons. Ten rounds per session, with streaks and a final medal.</p>
           <div class="nt-ear-mastery" id="nt-ear-mastery" style="display:none;"></div>
+        </div>
+
+        <div class="nt-game-panel" id="nt-panel-reading">
+          <div class="nt-panel-header">
+            <div class="nt-panel-title">
+              <h3 data-i18n="reading.panel_title">Studies for the page</h3>
+              <p class="nt-panel-subtitle" data-i18n="reading.panel_subtitle">From the shape of the line to reading it at sight.</p>
+            </div>
+          </div>
+          <!-- The clef the settings beside describe, with its three anchors
+               drawn on it. It answers "what am I about to read" before a
+               single study is chosen. -->
+          <div class="nt-read-preview" id="nt-reading-preview">
+            <div id="nt-reading-preview-staff"></div>
+            <p class="nt-read-preview-caption" id="nt-reading-preview-caption"></p>
+          </div>
+          <div class="nt-levels nt-reading-levels" id="nt-reading-levels"></div>
+          <p class="nt-ear-intro" id="nt-reading-tip"></p>
         </div>
 
         <div class="nt-game-panel" id="nt-panel-rhythm">
@@ -134,6 +153,46 @@
                 <span class="nt-toggle-text">
                   <span class="nt-toggle-title" data-i18n="ear.use_home_title">Play C as reference</span>
                   <span class="nt-toggle-desc" data-i18n="ear.use_home_desc">Sound the home note before each mystery note. Turn off for a harder challenge (pure absolute pitch).</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="nt-game-panel" id="nt-deck-reading">
+            <div class="nt-deck-title">
+              <span data-i18n="deck.reading">Page settings</span>
+              <span class="nt-deck-emoji" aria-hidden="true">🎼</span>
+            </div>
+            <div class="nt-deck-stack">
+              <div class="nt-option-group">
+                <div class="nt-option-label-row">
+                  <div class="nt-option-label" data-i18n="reading.clef">Clef</div>
+                  <button type="button" class="nt-help" data-i18n-attr="aria-label:reading.clef_help_label" aria-describedby="nt-clef-help">?</button>
+                  <span id="nt-clef-help" class="nt-help-tip" role="tooltip" data-i18n="reading.clef_help">Guitar reads in the treble clef, bass in the bass clef — both an octave above what they sound.</span>
+                </div>
+                <div class="nt-ear-diff" id="nt-reading-clef">
+                  <button type="button" class="nt-seg" data-clef="auto" data-i18n="reading.clef.auto" data-i18n-attr="title:reading.clef.auto_title" title="Follows the instrument you chose">From the instrument</button>
+                  <button type="button" class="nt-seg" data-clef="treble" data-i18n="reading.clef.treble" data-i18n-attr="title:reading.clef.treble_title" title="The clef guitar music is written in">Treble</button>
+                  <button type="button" class="nt-seg" data-clef="bass" data-i18n="reading.clef.bass" data-i18n-attr="title:reading.clef.bass_title" title="The clef bass music is written in">Bass</button>
+                </div>
+                <div class="nt-tempo-note nt-option-hint" id="nt-reading-clef-note"></div>
+              </div>
+
+              <label class="nt-toggle" for="nt-reading-sound">
+                <input type="checkbox" id="nt-reading-sound" checked>
+                <span class="nt-toggle-track"><span class="nt-toggle-thumb"></span></span>
+                <span class="nt-toggle-text">
+                  <span class="nt-toggle-title" data-i18n="reading.sound_title">Sound every note</span>
+                  <span class="nt-toggle-desc" data-i18n="reading.sound_desc">The note is played as it is answered. A sign bound to a sound is learned; a sign alone is memorised and forgotten.</span>
+                </span>
+              </label>
+
+              <label class="nt-toggle" for="nt-reading-neck">
+                <input type="checkbox" id="nt-reading-neck" checked>
+                <span class="nt-toggle-track"><span class="nt-toggle-thumb"></span></span>
+                <span class="nt-toggle-text">
+                  <span class="nt-toggle-title" data-i18n="reading.neck_title">Show it on the neck</span>
+                  <span class="nt-toggle-desc" data-i18n="reading.neck_desc">After a note is missed, where it lies under the hand. Turn it off once the hand goes there by itself.</span>
                 </span>
               </label>
             </div>
@@ -211,6 +270,10 @@
             <span aria-hidden="true">💡</span>
             <span data-i18n-html="tip.ear"><strong>Ear tip:</strong> Use headphones — bass and intonation are easier to hear.</span>
           </div>
+          <div class="nt-tip-box nt-game-panel" id="nt-tip-reading">
+            <span aria-hidden="true">💡</span>
+            <span data-i18n-html="tip.reading"><strong>Reading tip:</strong> Learn three notes by sight and read the rest as a distance from them.</span>
+          </div>
           <div class="nt-tip-box nt-game-panel" id="nt-tip-rhythm">
             <span aria-hidden="true">💡</span>
             <span data-i18n-html="tip.rhythm"><strong>Rhythm tip:</strong> Focus on the pulse before you play the note.</span>
@@ -272,6 +335,49 @@
       <div class="nt-ear-choices" id="nt-ear-choices"></div>
       <div class="nt-feedback" id="nt-ear-feedback" style="justify-content:center;"></div>
       <div class="nt-ear-theory" id="nt-ear-theory" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- ── Play: reading the staff ──────────────────────── -->
+  <div id="nt-reading">
+    <!-- The explanation, before the exercise. It is shown the first time a
+         study is opened and never forced again; the study card carries a
+         "read it again" button for whenever it is wanted. -->
+    <div class="nt-panel nt-lesson" id="nt-read-lesson">
+      <div class="nt-lesson-dots" id="nt-lesson-dots" aria-hidden="true"></div>
+      <h3 class="nt-lesson-title" id="nt-lesson-title"></h3>
+      <div class="nt-lesson-figure" id="nt-lesson-figure"></div>
+      <p class="nt-lesson-body" id="nt-lesson-body"></p>
+      <div class="nt-lesson-actions">
+        <button class="nt-btn secondary nt-lesson-back" id="nt-lesson-back" data-i18n="reading.lesson.back">Back</button>
+        <button class="nt-btn secondary" id="nt-lesson-skip" data-i18n="reading.lesson.skip">Straight to the exercise</button>
+        <button class="nt-btn" id="nt-lesson-next"><span id="nt-lesson-next-label" data-i18n="reading.lesson.next">Next</span></button>
+      </div>
+    </div>
+
+    <div class="nt-panel">
+      <div class="nt-hud" style="justify-content:center;">
+        <div class="nt-stat"><div class="nt-stat-val" id="nt-read-score">0</div><div class="nt-stat-lbl" data-i18n="hud.points">Points</div></div>
+        <div class="nt-stat combo"><div class="nt-stat-val" id="nt-read-streak">x0</div><div class="nt-stat-lbl" data-i18n="hud.streak">Streak</div></div>
+        <div class="nt-stat"><div class="nt-stat-val" id="nt-read-round">0/0</div><div class="nt-stat-lbl" data-i18n="hud.round">Round</div></div>
+      </div>
+      <!-- One pip per question: how much of the lesson is behind you, seen
+           rather than counted. Filled green as they are answered. -->
+      <div class="nt-read-pips" id="nt-read-pips" aria-hidden="true"></div>
+    </div>
+
+    <div class="nt-panel nt-read-stage">
+      <div class="nt-read-ask" id="nt-read-ask" data-i18n="reading.ask">Which note is this?</div>
+      <div class="nt-read-staff" id="nt-read-staff"></div>
+      <div class="nt-read-heard" id="nt-read-heard"></div>
+      <div class="nt-ear-choices nt-read-choices" id="nt-read-choices"></div>
+      <button type="button" class="nt-btn secondary nt-read-hint" id="nt-read-hint"
+              data-i18n-attr="title:reading.hint_title" title="Worth half the points">
+        <span aria-hidden="true">💡</span>
+        <span data-i18n="reading.hint">Hint</span>
+      </button>
+      <div class="nt-read-neck" id="nt-read-neck"></div>
+      <div class="nt-feedback" id="nt-read-feedback" style="justify-content:center;"></div>
     </div>
   </div>
 

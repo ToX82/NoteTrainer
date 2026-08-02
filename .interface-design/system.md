@@ -6,7 +6,7 @@
 
 **Who:** A guitar/bass player between practice sessions, mic or interface plugged in, picking one short study and playing.
 
-**Signature:** Three section accents. Tempo (rhythm) is electric coral, Manico (fretboard) is deep cyan, Orecchio (ear) is violet. The active game recolors accents, CTA, and selected cards.
+**Signature:** Four section accents. Tempo (rhythm) is electric coral, Manico (fretboard) is deep cyan, Orecchio (ear) is violet, Pagina (reading) is ink amber. The active game recolors accents, CTA, and selected cards.
 
 ## Depth
 
@@ -59,6 +59,7 @@ Light defaults; dark mode overrides the same names.
 | `--ms-tempo` | `#E53935` | Rhythm / Il Tempo |
 | `--ms-manico` | `#00ACC1` | Fretboard / Il Manico |
 | `--ms-orecchio` | `#8E24AA` | Ear / L'Orecchio |
+| `--ms-pagina` | `#EA8C00` | Reading / La Pagina |
 | `--ms-gold` | `#D97706` | Stars, combo, medals highlight |
 | `--ms-ok` / `--ms-err` | emerald / red | Success / failure |
 
@@ -67,17 +68,18 @@ Active section remaps `--ms-accent` / `--ms-accent-dark` / `--ms-accent-soft` vi
 - `.note-trainer-root.is-game-rhythm`
 - `.note-trainer-root.is-game-fret`
 - `.note-trainer-root.is-game-ear`
+- `.note-trainer-root.is-game-reading`
 
 ## Layout
 
 Setup (`#nt-setup.nt-setup`):
 
-1. **Mode selector** (`.nt-mode-selector`) — three equal game cards (`#nt-games`), full width, no label above them
+1. **Mode selector** (`.nt-mode-selector`) — four equal game cards (`#nt-games`), full width, no label above them. Drops to two columns under 1080px, one under 900px
 2. **Workspace** (`.nt-workspace`) — `1fr` + `340px` (stacks under ~900px)
-   - **Left** (`.nt-workspace-main`): `#nt-panel-fret|ear|rhythm` — studies / levels
-   - **Right** (`.nt-control-deck` → `.nt-deck-card`): `#nt-deck-fret|ear|rhythm` + Start + tip box
+   - **Left** (`.nt-workspace-main`): `#nt-panel-fret|ear|reading|rhythm` — studies / levels
+   - **Right** (`.nt-control-deck` → `.nt-deck-card`): `#nt-deck-fret|ear|reading|rhythm` + Start + tip box
 
-All three games share the same shape: studies on the left, terms on the right. Ear difficulty tiers are studies (own medal / best score) in `#nt-ear-levels`, not a switch in the deck.
+All four games share the same shape: studies on the left, terms on the right. Ear difficulty tiers are studies (own medal / best score) in `#nt-ear-levels`, not a switch in the deck.
 
 Visibility: `.is-game-*` on the root toggles both panel and deck via `.nt-game-panel`.
 
@@ -93,7 +95,7 @@ Page shell: `html, body` are `height: 100%; overflow: hidden` on the practice pa
 - Icon tinted with the section color even when inactive
 - Active: section border + soft tinted background (`--ms-*-light`)
 - Longer copy is the card's `title`, never on the card
-- Order in the picker: Tempo → Manico → Orecchio
+- Order in the picker: Tempo → Manico → Orecchio → Pagina (reading last: it leans on the other three)
 
 ### Level / study cards
 - Grid: `repeat(auto-fill, minmax(180px, 1fr))`, gap 14px (mockup density — not a forced 5-wide table)
@@ -101,6 +103,35 @@ Page shell: `html, body` are `height: 100%; overflow: hidden` on the practice pa
 - Rhythm / ear: circular `.nt-lc-num` → name → `.nt-lc-foot` (meta left, score / “Nuovo” right)
 - No drill blurb under the rhythm or ear grids — the deck tip covers advice; card `title` holds the full description
 - Fretboard cards: note chips / progress kept; `.nt-lc-mastery` opens on the selected card only
+
+### Staff (`utils/staff.js`)
+Drawn as bare geometry with `.note-trainer-staff-*` classes; **all colour lives in `theme.css`** so light/dark are handled where every other palette is. Clefs are stroked paths, matching the sprite icons — no music font, no notation library.
+
+- Default `.note-trainer-staff-svg` is **height-fitted** (168px, `width: auto`, centred) so every question is the same size whatever it contains
+- `.is-wide` (sight-reading phrases) is width-fitted instead
+- Staff lines are `color-mix(--ms-text 66%)` — ink thinned down, never a border grey
+- Verdicts recolour the **notehead**, not the panel: `.is-ok` / `.is-err` / `.is-active` / `.is-ghost`, with a 0.3s pop on resolve
+
+### Explanation cards (`.nt-lesson`)
+Shown inside `#nt-reading` under `.is-read-lesson`, which hides the HUD and the stage — the lesson is the whole screen, not a banner over the exercise.
+
+- Centred column: dots → title (Fredoka 23px) → framed figure → body (max 52ch) → actions
+- `.nt-lesson-dots .nt-ldot` — the current one widens to 22px in the section accent; the ones behind it are `--ms-pagina-dark`
+- Actions: *Back* + *Straight to the exercise* (both secondary) + *Next* / *Start the exercise* (primary). Back is hidden on the first card, the skip on the last — where each would be a no-op
+- Shown on every entry to a study, not once: the explanation is never demoted to a button someone has to go looking for
+
+### Hint (`.nt-read-hint`)
+A small secondary button under the answers, `opacity: .4` once spent. Available, never loud: a player who does not need it should not be invited, one who does should not have to look.
+
+- Its anchor note is ghosted with `.is-ghost.is-anchor` — the section accent, **not** the success green, which would read as "this is the answer"
+- `.note-trainer-staff-guide` — dashed accent rule for direction questions
+- Hidden entirely in sight-reading
+
+### Reading panel + play view
+- `.nt-read-preview` — the clef in play with its three anchors named under it, same role as the fret preview
+- `.nt-read-staff` — frame **hugs** the staff (`align-self: center; width: auto`); stretches only in sight-reading
+- `.nt-read-pips` — one pip per question, `is-ok` / `is-err` / `is-now` (breathing). A lesson you can see the end of
+- Contour answers (`.nt-choice.is-contour`) use the UI font with a glyph above the word; note-name answers keep the mono face
 
 ### Fretboard preview (`.nt-fret-preview`)
 Top of the fret panel: real `utils/fretboard.js` on `--ms-fretboard`, compact height (~72px SVG). Caption is hidden in setup to save vertical space. Re-renders on instrument / tuning change.
@@ -125,6 +156,7 @@ Top of the fret panel: real `utils/fretboard.js` on `--ms-fretboard`, compact he
 
 **Manico deck:** instrument, tuning, notes, mode (no mic select — input is topbar).
 **Orecchio deck:** answer-with segments + home-note toggle.
+**Pagina deck:** clef segments (auto / treble / bass) with a live hint naming the line the clef is named after, plus two teaching toggles (sound every note, show it on the neck).
 
 ### Primary button
 - `.nt-btn` — accent fill, Fredoka, bottom edge `--ms-accent-dark`, soft accent-colored glow
@@ -147,7 +179,7 @@ The bar carries identity so the screen below is all practice. Three groups, `spa
 
 Musician-facing Italian first in the mockup; EN mirrors the same roles.
 
-- Games: Il Tempo / Il Manico / L'Orecchio
+- Games: Il Tempo / Il Manico / L'Orecchio / La Pagina
 - Rhythm panel: Studi Ritmici
 - Judging labels: Iniziatore / Groover / Chirurgo (not Stretto / Preciso / Indulgente)
 - CTA: `COMINCIAMO` (IT) / `LET'S GO` (EN)
@@ -156,12 +188,14 @@ Musician-facing Italian first in the mockup; EN mirrors the same roles.
 
 | Default | Instead |
 |---------|---------|
-| Single Duolingo green accent | Three musical section colors |
+| Single Duolingo green accent | Four musical section colors |
 | System / Inter-only type | Fredoka + Plus Jakarta Sans |
 | Flat equal cards, no press | Chunky bottom-edge pressables |
 | Sidebar painted a different hue | Same canvas; border + workspace columns |
 | Latency + long notes stuffed in the Tempo deck | Topbar latency; `?` + live hint under segments |
 | Forced 5-column rhythm grid | `auto-fill` study grid like the mockup |
+| Unicode 𝄞 / an embedded music font | Stroked clef paths, matching the icon sprite |
+| Staff lines in border grey | Staff lines in thinned ink — they are the ruler, not the frame |
 | Side padding eating the 1140px rail | `max-width: 1140px; width: 92%;` with zero horizontal padding |
 
 ## Files
@@ -173,4 +207,6 @@ Musician-facing Italian first in the mockup; EN mirrors the same roles.
 - Copy: `docs/i18n/it.json`, `docs/i18n/en.json`
 - Mockup reference: `docs/revamp.html`
 
-`.nt-levels` is a flex row in `base.css`, which lets the last card on a line grow to fill it; `theme.css` re-lays it (and rhythm / ear grids) as `auto-fill` so every study is the same size. Keep it that way when adding a card type.
+`.nt-levels` is a flex row in `base.css`, which lets the last card on a line grow to fill it; `theme.css` re-lays it (and the rhythm / ear / reading grids) as `auto-fill` so every study is the same size. Keep it that way when adding a card type.
+
+Visibility for a new section needs **two** edits, not one: the `.is-game-*` → `#nt-panel-* / #nt-deck-* / #nt-tip-*` rule lives in `base.css`, and the deck's flex stacking plus the tip's `display: flex` live in `theme.css`.

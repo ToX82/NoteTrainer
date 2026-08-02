@@ -14,13 +14,15 @@
  */
 (function () {
     // ctx = {
-    //   sessionType: 'fret' | 'ear' | 'rhythm',
+    //   sessionType: 'fret' | 'ear' | 'rhythm' | 'reading',
     //   result: { accuracy, medal, bestCombo, score, correct, wrong, ... },
     //           rhythm runs also carry { meanError, deviation, bpm, passed },
     //   medals:     cumulative { key -> 'gold'|'silver'|'bronze' } AFTER this session,
     //   lifetime:   cumulative { correct, wrong, sessions } AFTER this session,
     //   stringMastered: bool (fretboard only — true when some string is 2-star),
     //   gapDrill:   bool (rhythm only — the level drops the click for whole bars),
+    //   readingKind: 'contour'|'name'|'play'|'sight' (reading only — how the
+    //               study was answered),
     // }
     const DEFINITIONS = [
         { id: 'first_step',     icon: '🎵', title: 'First steps',      desc: 'Play your first correct note.' },
@@ -39,6 +41,8 @@
         { id: 'in_the_pocket',  icon: '🎯', title: 'In the pocket',    desc: 'Finish a rhythm run averaging under 5ms off the beat.' },
         { id: 'internal_clock', icon: '⏱️', title: 'Internal clock',   desc: 'Pass a gap-click drill — hold the time with no metronome.' },
         { id: 'tempo_climber',  icon: '🚀', title: 'Tempo climber',    desc: 'Clear a rhythm drill at 120 BPM or faster.' },
+        { id: 'reading_gold',   icon: '📖', title: 'Reader',           desc: 'Earn gold on a reading study.' },
+        { id: 'sight_read',     icon: '🎼', title: 'At sight',         desc: 'Pass the sight-reading study.' },
     ];
 
     const TESTS = {
@@ -65,6 +69,11 @@
                              && c.result && c.result.passed,
         tempo_climber:  c => c.sessionType === 'rhythm' && c.result
                              && c.result.passed && c.result.bpm >= 120,
+        reading_gold:   c => hasGold(c.medals, k => k.indexOf('reading:') === 0),
+        // Reading a line you have never seen, in time, without stopping — the
+        // one thing the whole ladder is for.
+        sight_read:     c => c.sessionType === 'reading' && c.readingKind === 'sight'
+                             && c.result && c.result.promoted,
     };
 
     function hasGold(medals, keyPred) {

@@ -129,6 +129,9 @@
     .note-trainer-root.is-game-ear  #nt-panel-ear,
     .note-trainer-root.is-game-ear  #nt-deck-ear,
     .note-trainer-root.is-game-ear  #nt-tip-ear  { display: block; }
+    .note-trainer-root.is-game-reading #nt-panel-reading,
+    .note-trainer-root.is-game-reading #nt-deck-reading,
+    .note-trainer-root.is-game-reading #nt-tip-reading { display: block; }
 
     .nt-setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 11px; }
     .nt-field { display: flex; flex-direction: column; gap: 5px; }
@@ -416,6 +419,44 @@
     .note-trainer-root.is-rhythm #nt-setup { display: none; }
     .nt-rhythm-canvas { width: 100%; display: block; border-radius: var(--nt-r-sm); }
     @media (prefers-reduced-motion: reduce) { .note-trainer-root.is-rhythm #nt-rhythm { animation: none; } }
+
+    /* ── Play view: reading the staff ──────────────────────── */
+    #nt-reading { display: none; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+    .note-trainer-root.is-reading #nt-reading { display: flex; animation: nt-shell-in var(--nt-dur-slow) var(--nt-ease); }
+    .note-trainer-root.is-reading #nt-setup { display: none; }
+    @media (prefers-reduced-motion: reduce) { .note-trainer-root.is-reading #nt-reading { animation: none; } }
+
+    /* The explanation replaces the stage; the HUD has nothing to say yet. */
+    .nt-lesson { display: none; flex-direction: column; align-items: center; gap: 14px; padding: 26px 20px; }
+    .note-trainer-root.is-read-lesson #nt-read-lesson { display: flex; }
+    .note-trainer-root.is-read-lesson .nt-read-stage,
+    .note-trainer-root.is-read-lesson #nt-read-lesson ~ .nt-panel { display: none; }
+    .nt-lesson-dots { display: flex; gap: 7px; }
+    .nt-lesson-title { margin: 0; text-align: center; }
+    .nt-lesson-figure { width: 100%; display: flex; justify-content: center; }
+    .nt-lesson-body { margin: 0; max-width: 52ch; text-align: center; line-height: 1.55; }
+    .nt-lesson-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 4px; }
+
+    .nt-read-stage { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 22px 18px; }
+    .nt-read-ask { font-size: 12.5px; color: var(--nt-muted); text-align: center; }
+    .nt-read-staff { width: 100%; display: flex; justify-content: center; }
+    .nt-read-heard { min-height: 18px; font-size: 12.5px; color: var(--nt-muted); }
+    .nt-read-choices { display: flex; flex-wrap: wrap; justify-content: center; }
+    .nt-read-hint:empty { display: none; }
+    .nt-read-neck:empty { display: none; }
+    .nt-read-neck { width: 100%; }
+
+    /* Only the played studies have anything to say about the microphone. */
+    .nt-read-heard { display: none; }
+    .note-trainer-root.is-read-played .nt-read-heard { display: block; }
+
+    /* The lesson bar: one pip per question. */
+    .nt-read-pips { display: flex; gap: 5px; margin-top: 12px; }
+    .nt-read-pips .nt-pip { flex: 1 1 0; height: 6px; border-radius: 99px; background: var(--nt-inset-deep); transition: background var(--nt-dur-base) var(--nt-ease); }
+
+    /* ── Setup: the staff preview on the reading panel ─────── */
+    .nt-read-preview { margin-top: 12px; border-radius: var(--nt-r-md); padding: 10px 12px; background: var(--nt-inset); }
+    .nt-read-preview-caption { margin: 6px 0 0; font-size: 11.5px; color: var(--nt-muted); text-align: center; }
 
     /* ── Calibration overlay ───────────────────────────────────
        Three named steps, one on screen at a time, with the player's own taps

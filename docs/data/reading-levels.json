@@ -1,0 +1,284 @@
+[
+  {
+    "id": 1,
+    "label": "The Staff",
+    "desc": "Higher or lower. Nothing is named yet.",
+    "tip": "The page is a picture of pitch: up there means up in sound. Read the second note against the first — that is all reading ever is.",
+    "kind": "contour",
+    "contour": "updown",
+    "range": {
+      "treble": ["E4", "F5"],
+      "bass": ["G2", "A3"]
+    },
+    "count": 10,
+    "promote": 0.85,
+    "cards": [
+      {
+        "figure": "updown",
+        "title": "Five lines, and height is pitch",
+        "body": "The staff is a picture of pitch: higher on the page means higher in sound. That is the whole of it, and it is the only thing this study asks you to see."
+      },
+      {
+        "figure": "updown",
+        "title": "Read the second note against the first",
+        "body": "No names yet. Look only at where the second note sits compared to the one before it. Reading has never been anything else."
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "label": "Steps and Skips",
+    "desc": "Line to space is a step. Line to line is a skip.",
+    "tip": "Do not count the notes between — see the shape. Neighbours are a step; anything that jumps a place is a skip. This is the eye you will read melodies with.",
+    "kind": "contour",
+    "contour": "stepskip",
+    "range": {
+      "treble": ["E4", "F5"],
+      "bass": ["G2", "A3"]
+    },
+    "count": 12,
+    "promote": 0.8,
+    "cards": [
+      {
+        "figure": "step",
+        "title": "Line to space is a step",
+        "body": "Next-door neighbours. The two notes touch: one on a line, the next in the space just above or below it."
+      },
+      {
+        "figure": "skip",
+        "title": "Line to line is a skip",
+        "body": "A place has been jumped. Line to line, or space to space — the eye catches the gap before you can count it."
+      },
+      {
+        "figure": "skip",
+        "title": "See the shape; do not count",
+        "body": "Counting the notes in between is what slow readers do. Steps and skips are two different pictures, and you will come to tell them apart at a glance."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "label": "The Landmarks",
+    "desc": "Three notes learned by sight. Everything else is measured from them.",
+    "tip": "Nobody reads by counting up from the bottom line. You learn a few anchors cold and read the rest as a distance from them. Three is enough to start.",
+    "kind": "name",
+    "pool": {
+      "treble": ["G4", "B4", "C4"],
+      "bass": ["F3", "D3", "C4"]
+    },
+    "count": 10,
+    "promote": 0.85,
+    "cards": [
+      {
+        "figure": "landmarks",
+        "title": "Three notes, learned cold",
+        "body": "Nobody reads by counting up from the bottom line. You memorise a few anchors and read everything else against them. These three are enough to start."
+      },
+      {
+        "figure": "landmarks",
+        "title": "Everything else is a distance",
+        "body": "One place above an anchor is a step above it; two places is a skip. That is how a reader reaches a note they never memorised."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "label": "First Position: Top Strings",
+    "desc": "Read it, then play it. The letter is enough here — any octave.",
+    "tip": "From now on the microphone answers for you. Do not hunt for the fret: read the note, hear it in your head, then let the hand go there.",
+    "kind": "play",
+    "range": {
+      "treble": ["B4", "G5"],
+      "bass": ["D3", "B3"]
+    },
+    "octaveStrict": false,
+    "count": 10,
+    "promote": 0.8,
+    "cards": [
+      {
+        "figure": "range",
+        "title": "Now the microphone answers",
+        "body": "Read the note, hear it in your head, then let the hand go there. Do not hunt for the fret — hunting is the habit you are here to lose."
+      },
+      {
+        "figure": "range",
+        "title": "Written an octave above what it sounds",
+        "body": "Guitar and bass are both notated an octave higher than they sound. It is universal, and it changes nothing for you: play the note you see."
+      },
+      {
+        "figure": "range",
+        "title": "Any octave will do — for now",
+        "body": "This study passes on the letter alone. From the next one on, the octave counts as well."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "label": "First Position: Middle Strings",
+    "desc": "The same, in the middle of the staff — and now the octave counts.",
+    "tip": "One written note has five homes on the neck. In first position it has one, and that is the point: from here the reading and the hand are the same act.",
+    "kind": "play",
+    "range": {
+      "treble": ["D4", "A4"],
+      "bass": ["A2", "D3"]
+    },
+    "octaveStrict": true,
+    "count": 12,
+    "promote": 0.8,
+    "cards": [
+      {
+        "figure": "range",
+        "title": "Now the octave counts too",
+        "body": "One written note has five homes on the neck. In first position it has one, and that is the point: from here, reading and the hand are a single act."
+      },
+      {
+        "figure": "range",
+        "title": "The middle of the staff, the middle of the hand",
+        "body": "These notes sit on the lines you will look at most. Learn them here and the rest of the staff is measured outward from them."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "label": "Below the Staff",
+    "desc": "The low strings, on their ledger lines.",
+    "tip": "A ledger line is just the staff continuing where the page stopped drawing it. Count them outward in lines, never in notes.",
+    "kind": "play",
+    "range": {
+      "treble": ["E3", "C4"],
+      "bass": ["E2", "A2"]
+    },
+    "octaveStrict": true,
+    "count": 12,
+    "promote": 0.78,
+    "cards": [
+      {
+        "figure": "ledger",
+        "title": "A ledger line is the staff, continued",
+        "body": "The page stopped drawing lines; the staff did not stop. A ledger line is one more line of the same ruler, drawn only where a note needs it."
+      },
+      {
+        "figure": "ledger",
+        "title": "Count outward in lines, never in notes",
+        "body": "One ledger below, two ledgers below. Naming every note on the way down is exactly how a reader gets slow."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "label": "The Whole of First Position",
+    "desc": "Every natural note under the hand, top to bottom.",
+    "tip": "No string is announced any more. The note tells you where to go — that is the whole skill, and this is where it becomes one movement.",
+    "kind": "play",
+    "range": {
+      "treble": ["E3", "G5"],
+      "bass": ["E2", "B3"]
+    },
+    "octaveStrict": true,
+    "count": 16,
+    "promote": 0.78,
+    "cards": [
+      {
+        "figure": "range",
+        "title": "No string is announced any more",
+        "body": "The note itself tells you where to go. That is the whole skill, and this is where it becomes one movement instead of two."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "label": "Accidentals",
+    "desc": "Sharp, flat, natural — one semitone, written beside the note.",
+    "tip": "A sharp raises by a semitone, a flat lowers by one, a natural cancels. On the neck that is exactly one fret in either direction — no more than that.",
+    "kind": "play",
+    "range": {
+      "treble": ["E4", "E5"],
+      "bass": ["G2", "G3"]
+    },
+    "accidentals": "both",
+    "octaveStrict": true,
+    "count": 14,
+    "promote": 0.75,
+    "cards": [
+      {
+        "figure": "accidentals",
+        "title": "Sharp, flat, natural",
+        "body": "A sharp raises the note by a semitone, a flat lowers it by one, a natural cancels either. Same place on the staff — a different sign in front of it."
+      },
+      {
+        "figure": "accidentals",
+        "title": "One semitone is one fret",
+        "body": "On the neck there is nothing to work out: a sharp is one fret higher, a flat one fret lower. The sign is the finger."
+      },
+      {
+        "figure": "accidentals",
+        "title": "It lasts until the barline",
+        "body": "An accidental holds for the rest of its bar, on that note, in that octave. At the next barline it is gone."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "label": "Key Signatures",
+    "desc": "The signs stated once at the head, binding every bar that follows.",
+    "tip": "The signature is not decoration: an F with a sharp at the head is an F sharp all the way down the page, in every octave, with nothing written beside it. Read the head first, always.",
+    "kind": "name",
+    "range": {
+      "treble": ["E4", "F5"],
+      "bass": ["G2", "A3"]
+    },
+    "keySigs": [1, 2, -1, -2],
+    "count": 12,
+    "promote": 0.75,
+    "cards": [
+      {
+        "figure": "keysig",
+        "title": "Stated once, at the head",
+        "body": "Rather than a sign beside every note, the signs are gathered at the start of the line. Read the head first — always, before the first note."
+      },
+      {
+        "figure": "keysig",
+        "title": "It binds every octave, all the way down",
+        "body": "An F with a sharp at the head is an F sharp everywhere on the page, in every octave, with nothing written beside it."
+      },
+      {
+        "figure": "keysig",
+        "title": "A signature is a key",
+        "body": "One sharp is G major, two is D, one flat is F. In time you will recognise the key before you have read a single note."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "label": "Sight-Reading",
+    "desc": "A line you have never seen, played straight through to a click.",
+    "tip": "You will get one wrong. Keep going anyway — stopping to fix a note is the one habit that makes a reader unemployable. Eyes ahead of the hands.",
+    "kind": "sight",
+    "range": {
+      "treble": ["E4", "F5"],
+      "bass": ["G2", "A3"]
+    },
+    "octaveStrict": true,
+    "bars": 4,
+    "beatsPerBar": 4,
+    "bpm": 60,
+    "promote": 0.7,
+    "cards": [
+      {
+        "figure": "phrase",
+        "title": "A line you have never seen",
+        "body": "Four bars, a click, one pass. Look at the shape before the first beat: where does it move by step, and where does it leap?"
+      },
+      {
+        "figure": "phrase",
+        "title": "The pitch, in its beat",
+        "body": "What is graded here is whether the right note was sounding while it was due. The millisecond belongs to the rhythm studies; this one is about not stopping."
+      },
+      {
+        "figure": "phrase",
+        "title": "Keep going — especially when you are wrong",
+        "body": "You will miss one. Stopping to fix it is the single habit that makes a reader unusable. Eyes ahead of the hands."
+      }
+    ]
+  }
+]

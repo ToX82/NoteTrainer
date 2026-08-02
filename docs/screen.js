@@ -58,8 +58,22 @@
         calib: null,               // latency-calibration run state
         calibGate: false,          // the calibration was opened on the way into a drill
         calibDeclined: false,      // player refused it once; do not ask again this session
+        reading: null,             // reading engine (mode 'reading')
+        staff: null,               // SVG staff renderer for the play view
+        staffPreview: null,        // the same renderer, on the setup panel
+        readingBoard: null,        // fretboard showing where a missed note lies
+        readingLevels: [],
+        readingLevelId: null,
+        readingClef: 'auto',       // 'auto' follows the instrument
+        readingSound: true,        // play each note as it is answered
+        readingNeckHelp: true,     // show a missed note on the neck
+        readingBusy: false,        // locked between rounds
+        lesson: null,              // the explanation cards being read
+        lessonStaff: null,         // staff renderer for a card's figure
+        sight: null,               // sight-reading run state
+        readingRaf: null,
         gameKind: 'fret',         // 'fret' = fretboard practice, 'ear' = ear training,
-                                  // 'rhythm' = rhythm training
+                                  // 'rhythm' = rhythm training, 'reading' = the staff
         currentLevelId: null,     // null = free play (fretboard)
         drillFocus: null,         // {strings, pcs} when drilling weak spots (fretboard)
         levelStrings: {},         // levelId -> [stringIndex, …] strings picked to drill
@@ -392,6 +406,7 @@
         applyGameKind();
         renderLevels();
         renderRhythmLevels();
+        renderReadingLevels();
         updateGlobalProgress();
         renderEarMastery();
     }
@@ -407,6 +422,7 @@
         S.root.classList.toggle('is-game-fret', kind === 'fret');
         S.root.classList.toggle('is-game-ear', kind === 'ear');
         S.root.classList.toggle('is-game-rhythm', kind === 'rhythm');
+        S.root.classList.toggle('is-game-reading', kind === 'reading');
         renderSetupHint();
         const label = S.ui.$('nt-start-label');
         if (label) label.textContent = startLabel(kind);
@@ -489,9 +505,9 @@
 
     // The picker is three equal cards, so what each one says has to fit on one
     // line; the long description stays as the card's tooltip.
-    // i18n-used: game.rhythm.title, game.fret.title, game.ear.title
-    // i18n-used: game.rhythm.tag, game.fret.tag, game.ear.tag
-    // i18n-used: game.rhythm.desc, game.fret.desc, game.ear.desc
+    // i18n-used: game.rhythm.title, game.fret.title, game.ear.title, game.reading.title
+    // i18n-used: game.rhythm.tag, game.fret.tag, game.ear.tag, game.reading.tag
+    // i18n-used: game.rhythm.desc, game.fret.desc, game.ear.desc, game.reading.desc
     function gameCard(kind, emoji, keys, onClick) {
         const card = document.createElement('button');
         card.className = 'nt-game-card' + (S.gameKind === kind ? ' active' : '');
@@ -514,15 +530,18 @@
         if (!wrap) return;
         wrap.innerHTML = '';
 
-        // Order matches the studio pillars: Time → Neck → Ear.
-        // Emoji icons match the Musician Studio mockup (tempo / manico / orecchio).
+        // Order matches the studio pillars: Time → Neck → Ear → Page. Reading
+        // comes last because it is the one that needs the other three: it asks
+        // for a pitch, on the neck, in time.
         const rhythmKeys = S.rhythmLevels.map(l => 'rhythm:' + l.id);
         const fretKeys = S.levels.map(l => l.id);
         const earKeys = ['easy', 'medium', 'hard'].map(t => 'ear:' + t);
+        const readingKeys = S.readingLevels.map(l => 'reading:' + l.id);
 
         wrap.appendChild(gameCard('rhythm', '⏱️', rhythmKeys, selectRhythm));
         wrap.appendChild(gameCard('fret', '🎸', fretKeys, selectFretGame));
         wrap.appendChild(gameCard('ear', '🎧', earKeys, selectEar));
+        wrap.appendChild(gameCard('reading', '🎼', readingKeys, selectReading));
     }
 
     // Total medals earned across every game — shown in the header as identity.
@@ -567,6 +586,9 @@
         // Rhythm training listens for attacks rather than pitch, and owns its
         // own clock and render loop.
         if (S.gameKind === 'rhythm') { await startRhythm(); return; }
+        // Reading opens the microphone only for the studies that are played;
+        // the ones that are answered with buttons never touch it.
+        if (S.gameKind === 'reading') { await startReading(); return; }
 
         const inst = S.ui.$('nt-instrument').value;
         const tuningName = S.ui.$('nt-tuning').value;
@@ -649,12 +671,16 @@
     function stop() {
         S.running = false;
         S.earBusy = false;
+        S.readingBusy = false;
         stopTimer();
         stopRhythmLoop();
+        stopReadingLoop();
         if (window._noteTrainerAudio) window._noteTrainerAudio.stop();
         S.root.classList.remove('is-playing');
         S.root.classList.remove('is-ear');
         S.root.classList.remove('is-rhythm');
+        S.root.classList.remove('is-reading', 'is-read-sight', 'is-read-played', 'is-read-lesson');
+        S.lesson = null;
         S.ui.$('nt-stop').style.display = 'none';
         S.ui.hideResults();
         if (S.config) refreshSelection();
@@ -667,6 +693,7 @@
     function teardown() {
         if (S.calib) closeCalibration();          // a calibration run holds the mic too
         stopRhythmLoop();
+        stopReadingLoop();
         if (S.running) stop();
         else if (window._noteTrainerAudio) window._noteTrainerAudio.stop();
         if (S.ui && S.ui.closeFx) S.ui.closeFx();
@@ -695,6 +722,8 @@
     // ── Detection callback (≈ every 30ms) ─────────────────────────────
     function onDetection(res) {
         const note = (res && res.smoothedFreq) ? M().freqToNoteOctave(res.smoothedFreq) : null;
+
+        if (S.gameKind === 'reading') { onReadingDetection(note); return; }
 
         if (note) {
             const sign = note.cents >= 0 ? '+' : '';
@@ -1248,6 +1277,873 @@
         }
         S.ui.showResults(result, { title: T('results.ear_title'), message });
         recordSession('ear', result);
+    }
+
+    // ── Reading the staff ─────────────────────────────────────────────
+    // The fourth game, and the one that leans on the other three: it asks for a
+    // pitch (the ear), found on the neck (the hand), and — in the last study —
+    // in time (the clock). Everything it draws comes from utils/staff.js and
+    // everything it knows comes from utils/reading.js; this section is the
+    // wiring between them and the screen.
+    //
+    // Three ways a study can be answered, in the order a teacher introduces
+    // them: buttons for the shape of the line, buttons for the name, and the
+    // microphone for the note actually played. The last is the real thing —
+    // reading is not a quiz, it is a symbol turning into a sound.
+
+    const RD = () => window._noteTrainerReading;
+
+    function currentReadingLevel() {
+        if (S.readingLevelId == null) return null;
+        return S.readingLevels.find(l => l.id === S.readingLevelId) || null;
+    }
+
+    // Guitar reads in the treble clef, bass in the bass clef. Following the
+    // instrument is the default because reading the wrong clef for your
+    // instrument is not a harder exercise, it is a different one.
+    function activeClef() {
+        if (S.readingClef === 'treble' || S.readingClef === 'bass') return S.readingClef;
+        const r = RD();
+        return r ? r.clefForInstrument(S.ui.$('nt-instrument').value) : 'treble';
+    }
+
+    // Stats are per clef: position 2 is a G in the treble staff and a B in the
+    // bass, so one bucket for both would average two different lessons together.
+    function readingStatsFor(clef) {
+        return (S.config.readingStats || {})[clef] || {};
+    }
+
+    // A study's kind, said in a word, for the card.
+    // i18n-used: reading.kind.contour, reading.kind.name, reading.kind.play, reading.kind.sight
+    const readingKindLabel = (kind) => T('reading.kind.' + kind, null, kind);
+
+    function renderReadingPreview() {
+        const box = S.ui.$('nt-reading-preview');
+        const host = S.ui.$('nt-reading-preview-staff');
+        if (!box || !host || !RD() || !window._noteTrainerStaff) return;
+        const clef = activeClef();
+        const r = RD();
+        if (!S.staffPreview) S.staffPreview = window._noteTrainerStaff(host);
+        // The three anchors, drawn on the clef in play and named underneath.
+        // A player who has these cold can find everything else from them.
+        const marks = (r.LANDMARKS[clef] || r.LANDMARKS.treble).map(p => {
+            const note = r.parsePitch(p);
+            return {
+                pos: r.staffPos(note, clef),
+                label: M().shortNameOf(M().pitchClass(r.midiOf(note)), false),
+            };
+        });
+        S.staffPreview.render({ clef, notes: marks, noteGap: 78, ghostRoom: false });
+        const caption = S.ui.$('nt-reading-preview-caption');
+        if (caption) caption.textContent = T('reading.preview_caption.' + clef);
+        box.style.display = '';
+    }
+
+    function renderReadingLevels() {
+        const wrap = S.ui.$('nt-reading-levels');
+        if (!wrap) return;
+        wrap.innerHTML = '';
+        renderReadingPreview();
+        S.readingLevels.forEach(lv => {
+            const key = 'reading:' + lv.id;
+            const medal = S.config.medals[key];
+            const best = S.config.bestScores[key];
+            const card = document.createElement('button');
+            card.className = 'nt-level-card' + (S.readingLevelId === lv.id ? ' active' : '');
+            card.title = T('reading.levels.' + lv.id + '.desc', null, lv.desc);
+            card.innerHTML =
+                (medal ? '<span class="nt-lc-medal">' + MEDAL_EMOJI[medal] + '</span>' : '')
+                + '<span class="nt-lc-num">' + lv.id + '</span>'
+                + '<span class="nt-lc-title">'
+                + T('reading.levels.' + lv.id + '.label', null, lv.label) + '</span>'
+                + '<div class="nt-lc-foot">'
+                +   '<span class="nt-lc-meta">' + readingKindLabel(lv.kind) + '</span>'
+                + (best != null
+                    ? '<span class="nt-lc-best"><svg class="nt-ic is-fill"><use href="#nt-i-star"/></svg> ' + best + '</span>'
+                    : '<span class="nt-lc-best is-empty">' + T('game.not_played') + '</span>')
+                + '</div>';
+            card.addEventListener('click', () => {
+                S.readingLevelId = lv.id;
+                saveProgress({ lastReadingLevel: lv.id });
+                renderReadingLevels();
+                renderReadingControls();
+            });
+            wrap.appendChild(card);
+        });
+        renderReadingControls();
+    }
+
+    function renderReadingControls() {
+        const seg = S.ui.$('nt-reading-clef');
+        if (seg) seg.querySelectorAll('.nt-seg').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-clef') === S.readingClef);
+        });
+        const note = S.ui.$('nt-reading-clef-note');
+        if (note) {
+            // i18n-used: reading.clef_note.treble, reading.clef_note.bass
+            note.innerHTML = T('reading.clef_note.' + activeClef());
+        }
+        const tip = S.ui.$('nt-reading-tip');
+        if (tip) {
+            const lv = currentReadingLevel();
+            tip.innerHTML = lv
+                ? T('rhythm.tip_line', {
+                    label: T('reading.levels.' + lv.id + '.label', null, lv.label),
+                    desc: T('reading.levels.' + lv.id + '.desc', null, lv.desc),
+                }) + '<br>' + T('reading.levels.' + lv.id + '.tip', null, lv.tip)
+                : T('reading.pick_a_study');
+        }
+    }
+
+    function selectReading() {
+        S.gameKind = 'reading';
+        saveProgress({ lastGame: 'reading' });
+        refreshSelection();
+    }
+
+    function setReadingClef(clef) {
+        if (!clef || clef === S.readingClef) { renderReadingControls(); return; }
+        S.readingClef = clef;
+        saveProgress({ readingClef: clef });
+        renderReadingLevels();
+    }
+
+    function setReadingSound(on) {
+        S.readingSound = !!on;
+        saveProgress({ readingSound: S.readingSound });
+    }
+
+    function setReadingNeckHelp(on) {
+        S.readingNeckHelp = !!on;
+        saveProgress({ readingNeckHelp: S.readingNeckHelp });
+    }
+
+    // ── The explanation, before the exercise ──────────────────────────
+    // A study that has to be worked out from its title teaches guessing. So
+    // each one opens with one to three cards that SHOW the thing — the figure
+    // is built from the study's own range and the clef in play (see
+    // buildFigure), so the picture is always about the notes about to be asked
+    // for, and is correct for a bassist reading bass clef.
+    //
+    // It is shown every time a study is opened. Hiding it behind a button once
+    // read makes the one thing a stuck player needs the hardest thing to find,
+    // and re-reading it costs whoever does not need it a single click — which
+    // is the whole point of "Straight to the exercise" sitting on every card.
+    function readingCards(lv) {
+        if (!lv || !Array.isArray(lv.cards)) return [];
+        return lv.cards.map((card, i) => ({
+            figure: card.figure,
+            // i18n: the English lives in reading-levels.json; a locale
+            // translates by adding reading.levels.<id>.card.<n>.title/.body.
+            title: T('reading.levels.' + lv.id + '.card.' + (i + 1) + '.title', null, card.title),
+            body: T('reading.levels.' + lv.id + '.card.' + (i + 1) + '.body', null, card.body),
+        }));
+    }
+
+    function openLesson(lv, clef, cards) {
+        S.lesson = { lv, clef, cards, idx: 0 };
+        if (!S.lessonStaff) S.lessonStaff = window._noteTrainerStaff(S.ui.$('nt-lesson-figure'));
+        S.root.classList.add('is-reading', 'is-read-lesson');
+        S.root.classList.remove('is-read-sight', 'is-read-played');
+        S.ui.$('nt-stop').style.display = '';
+        S.running = false;                 // nothing is being scored yet
+        renderLessonCard();
+    }
+
+    function closeLesson() {
+        S.lesson = null;
+        S.root.classList.remove('is-read-lesson');
+    }
+
+    function renderLessonCard() {
+        const L = S.lesson;
+        if (!L) return;
+        const card = L.cards[L.idx];
+        const last = L.idx === L.cards.length - 1;
+
+        S.ui.$('nt-lesson-title').textContent = card.title;
+        S.ui.$('nt-lesson-body').textContent = card.body;
+
+        const fig = RD().buildFigure(card.figure, L.lv, L.clef, Math.random);
+        const timed = fig.beatsPerBar != null;
+        S.lessonStaff.render({
+            clef: L.clef,
+            keySig: fig.keySig,
+            timeSig: timed ? [fig.beatsPerBar, 4] : null,
+            beatsPerBar: fig.beatsPerBar,
+            totalBeats: fig.totalBeats,
+            noteGap: timed ? 54 : 88,
+            fit: timed ? 'width' : 'height',
+            ghostRoom: false,
+            notes: fig.notes.map(n => ({
+                pos: n.pos, accidental: n.accidental, label: n.label,
+                beat: n.beat, beats: n.beats,
+            })),
+        });
+
+        const dots = S.ui.$('nt-lesson-dots');
+        if (dots) {
+            dots.innerHTML = L.cards.map((_, i) =>
+                '<i class="nt-ldot' + (i === L.idx ? ' is-now' : i < L.idx ? ' is-done' : '') + '"></i>').join('');
+            dots.setAttribute('aria-label', T('reading.lesson.step', { n: L.idx + 1, total: L.cards.length }));
+        }
+        S.ui.$('nt-lesson-next-label').textContent = T(last ? 'reading.lesson.begin' : 'reading.lesson.next');
+        // On the last card, skipping and continuing are the same thing.
+        const skip = S.ui.$('nt-lesson-skip');
+        if (skip) skip.style.display = last ? 'none' : '';
+        const back = S.ui.$('nt-lesson-back');
+        if (back) back.style.display = L.idx === 0 ? 'none' : '';
+    }
+
+    function lessonNext() {
+        const L = S.lesson;
+        if (!L) return;
+        if (L.idx < L.cards.length - 1) { L.idx++; renderLessonCard(); return; }
+        lessonDone();
+    }
+
+    function lessonBack() {
+        const L = S.lesson;
+        if (!L || L.idx === 0) return;
+        L.idx--;
+        renderLessonCard();
+    }
+
+    function lessonDone() {
+        const L = S.lesson;
+        if (!L) return;
+        const lv = L.lv, clef = L.clef;
+        closeLesson();
+        beginReadingSession(lv, clef);
+    }
+
+    // ── Reading session ───────────────────────────────────────────────
+    function readingHud() {
+        if (!S.reading) return;
+        S.ui.$('nt-read-score').textContent = String(S.reading.state.score);
+        const c = S.reading.state.combo;
+        const streak = S.ui.$('nt-read-streak');
+        streak.innerHTML = 'x' + c + (c >= 3 ? ' <svg class="nt-ic is-fill"><use href="#nt-i-fire"/></svg>' : '');
+        const stat = streak.closest('.nt-stat');
+        if (stat) {
+            stat.classList.toggle('is-hot', c >= 3);
+            stat.classList.toggle('is-blazing', c >= 6);
+        }
+        const total = S.reading.config.count;
+        const done = S.reading.state.correctCount + S.reading.state.wrongCount;
+        S.ui.$('nt-read-round').textContent = Math.min(done + 1, total) + '/' + total;
+        renderReadingPips();
+    }
+
+    // One pip per question. A lesson you can see the end of is a lesson people
+    // finish — and the colours make the run's shape obvious without a table.
+    function renderReadingPips() {
+        const box = S.ui.$('nt-read-pips');
+        if (!box || !S.reading) return;
+        const total = S.reading.config.count;
+        const marks = S.reading.state.marks || [];
+        let html = '';
+        for (let i = 0; i < total; i++) {
+            const m = marks[i];
+            html += '<i class="nt-pip' + (m ? ' is-' + m : (i === marks.length ? ' is-now' : '')) + '"></i>';
+        }
+        box.innerHTML = html;
+    }
+
+    async function startReading() {
+        const lv = currentReadingLevel();
+        const r = RD();
+        if (!lv || !r || !window._noteTrainerStaff) return;
+
+        const clef = activeClef();
+        S.openMidi = currentOpenMidi();
+        S.stringCount = S.openMidi.length;
+        S.maxFret = (S.config && S.config.maxFret) || 12;
+
+        // The explanation comes first, every time.
+        const cards = readingCards(lv);
+        if (cards.length) { openLesson(lv, clef, cards); return; }
+        await beginReadingSession(lv, clef);
+    }
+
+    async function beginReadingSession(lv, clef) {
+        const r = RD();
+        if (!lv || !r) return;
+        closeLesson();
+
+        if (lv.kind === 'sight') { await startSight(lv, clef); return; }
+
+        S.reading = r.createReading({
+            level: lv, clef,
+            count: lv.count || 12,
+            promote: lv.promote,
+            octaveStrict: !!lv.octaveStrict,
+            priorStats: readingStatsFor(clef),
+        });
+        S.reading.state.marks = [];
+        S.readingBusy = false;
+        S.sight = null;
+
+        if (!S.staff) S.staff = window._noteTrainerStaff(S.ui.$('nt-read-staff'));
+        S.ui.$('nt-read-feedback').textContent = '';
+        S.ui.$('nt-read-feedback').className = 'nt-feedback';
+        S.ui.$('nt-read-heard').textContent = '';
+        S.ui.$('nt-read-neck').innerHTML = '';
+        S.ui.clearMicError();
+        S.root.classList.add('is-reading');
+        S.root.classList.toggle('is-read-played', lv.kind === 'play');
+        S.root.classList.remove('is-read-sight');
+        S.ui.$('nt-stop').style.display = '';
+        S.running = true;
+
+        // The note goes up before the microphone is asked for. Opening an input
+        // device takes a moment, and a player who has just pressed Start should
+        // be reading in that moment rather than watching an empty staff — the
+        // reading is the exercise, the microphone only confirms it.
+        saveProgress({ lastMode: 'reading', lastReadingLevel: lv.id });
+        readingHud();
+        nextReadingRound();
+
+        // Only the played studies need the microphone. Opening it for a study
+        // answered with buttons would ask for a permission the player does not
+        // need and cannot use.
+        if (lv.kind === 'play') {
+            try {
+                await window._noteTrainerAudio.start({
+                    deviceId: S.mic.deviceId, channel: S.mic.channel,
+                    audioInputMode: S.mic.audioInputMode,
+                }, onDetection);
+            } catch (e) {
+                console.error('Note Trainer: reading audio start failed', e);
+                S.ui.showMicError(e);
+                stop();
+            }
+        }
+    }
+
+    function nextReadingRound() {
+        if (!S.running || !S.reading) return;
+        const q = S.reading.nextRound();
+        if (!q) { finishReading(); return; }
+        S.readingBusy = false;
+        S.ui.$('nt-read-feedback').textContent = '';
+        S.ui.$('nt-read-feedback').className = 'nt-feedback';
+        S.ui.$('nt-read-heard').textContent = '';
+        S.ui.$('nt-read-neck').innerHTML = '';
+        renderReadingQuestion(q);
+        resetReadingHint();
+        readingHud();
+    }
+
+    function renderReadingQuestion(q) {
+        const kind = S.reading.kind;
+        S.staff.render({
+            clef: S.reading.clef,
+            keySig: q.keySig,
+            notes: q.notes.map(n => ({ pos: n.pos, accidental: n.accidental })),
+            noteGap: kind === 'contour' ? 96 : 74,
+        });
+        // i18n-used: reading.ask.contour_updown, reading.ask.contour_stepskip
+        // i18n-used: reading.ask.name, reading.ask.play
+        const askKey = kind === 'contour'
+            ? 'reading.ask.contour_' + (q.mode === 'stepskip' ? 'stepskip' : 'updown')
+            : 'reading.ask.' + kind;
+        S.ui.$('nt-read-ask').textContent = T(askKey);
+        renderReadingChoices(q);
+        // A played study sounds nothing up front: the point is to read it, not
+        // to copy it. The note is played only once it has been answered.
+        if (kind === 'play') S.ui.$('nt-read-heard').textContent = T('play.listening');
+    }
+
+    // The answer buttons. A contour study gets two words; a naming study gets
+    // exactly the notes the study can ask for, and no others.
+    // i18n-used: reading.answer.up, reading.answer.down
+    // i18n-used: reading.answer.step, reading.answer.skip
+    function renderReadingChoices(q) {
+        const wrap = S.ui.$('nt-read-choices');
+        if (!wrap) return;
+        wrap.innerHTML = '';
+        if (S.reading.kind === 'play') return;
+        S.reading.choices().forEach(c => {
+            const b = document.createElement('button');
+            b.className = 'nt-choice';
+            b.setAttribute('data-answer', String(c.value));
+            if (S.reading.kind === 'contour') {
+                b.classList.add('is-contour');
+                b.innerHTML = '<span class="nt-ch-glyph" aria-hidden="true">'
+                    + (c.value === 'up' ? '↑' : c.value === 'down' ? '↓' : c.value === 'step' ? '•−•' : '•⌒•')
+                    + '</span><span>' + T('reading.answer.' + c.value) + '</span>';
+            } else {
+                b.textContent = c.name;
+            }
+            b.addEventListener('click', () => onReadingGuess(c.value));
+            wrap.appendChild(b);
+        });
+        enableReadingChoices(true);
+    }
+
+    // ── Hints ─────────────────────────────────────────────────────────
+    // What a teacher does when a player is stuck: point, and name the thing
+    // they already know. Never the answer — a hint that answers is just a
+    // slower way of being told, and it teaches the player to ask again.
+    function resetReadingHint() {
+        const btn = S.ui.$('nt-read-hint');
+        if (!btn) return;
+        // Sight-reading has no room for one: the line does not wait.
+        const usable = S.reading && S.reading.kind !== 'sight';
+        btn.style.display = usable ? '' : 'none';
+        btn.disabled = false;
+    }
+
+    function onReadingHint() {
+        if (!S.running || !S.reading || S.readingBusy || S.reading.isFinished()) return;
+        const h = S.reading.takeHint();
+        if (!h) return;
+        const btn = S.ui.$('nt-read-hint');
+        if (btn) btn.disabled = true;
+
+        const fb = S.ui.$('nt-read-feedback');
+        if (h.kind === 'guide') {
+            // A rule through the first note. With something to measure against,
+            // higher-or-lower stops being a memory test and becomes visible.
+            S.staff.guide(h.pos);
+            fb.textContent = T('reading.hint.contour');
+            fb.className = 'nt-feedback hint';
+            return;
+        }
+
+        // The nearest anchor, drawn beside the note and named. This is the
+        // module's entire method in one gesture.
+        // Marked as an anchor, not as an answer: green here would read as
+        // "this is the note", which is the one thing the hint must not say.
+        const anchor = S.staff.ghost(h.landmark.pos, h.landmark.accidental, h.landmark.shortName);
+        if (anchor) anchor.classList.add('is-anchor');
+        // i18n-used: reading.hint.above, reading.hint.below
+        // i18n-used: reading.interval.2, reading.interval.3, reading.interval.4
+        // i18n-used: reading.interval.5, reading.interval.6, reading.interval.7
+        // i18n-used: reading.interval.8
+        const interval = T('reading.interval.' + Math.min(8, h.interval), null, '');
+        fb.textContent = T('reading.hint.' + h.direction, { interval, note: h.landmark.name });
+        fb.className = 'nt-feedback hint';
+
+        // On a played study the neck is half the answer to "where is it?", and
+        // withholding it here would make the hint worth less than the note it
+        // costs.
+        if (S.reading.kind === 'play' && S.readingNeckHelp) {
+            showReadingOnNeck(h.target);
+        }
+    }
+
+    function enableReadingChoices(on) {
+        const wrap = S.ui.$('nt-read-choices');
+        if (!wrap) return;
+        wrap.querySelectorAll('.nt-choice').forEach(b => {
+            b.disabled = on ? b.classList.contains('wrong') : true;
+        });
+    }
+
+    function markReadingChoice(value, cls) {
+        const wrap = S.ui.$('nt-read-choices');
+        if (!wrap) return;
+        wrap.querySelectorAll('.nt-choice').forEach(b => {
+            if (b.getAttribute('data-answer') === String(value)) b.classList.add(cls);
+        });
+    }
+
+    function onReadingGuess(value) {
+        if (!S.running || !S.reading || S.readingBusy || S.reading.isFinished()) return;
+        S.readingBusy = true;
+        enableReadingChoices(false);
+        const ev = S.reading.guess(value);
+
+        // Wrong with a try left: lock that button, say what is wrong with the
+        // answer rather than merely that it is wrong, and reopen the round.
+        if (!ev.resolved) {
+            markReadingChoice(value, 'wrong');
+            S.ui.buzz();
+            const fb = S.ui.$('nt-read-feedback');
+            fb.textContent = T('ear.not_quite') + ' ' + T('reading.try_again');
+            fb.className = 'nt-feedback hint';
+            setTimeout(() => {
+                if (!S.running) return;
+                enableReadingChoices(true);
+                S.readingBusy = false;
+            }, 800);
+            return;
+        }
+        markReadingChoice(ev.expected, 'correct');
+        if (!ev.correct) markReadingChoice(value, 'wrong');
+        resolveReadingRound(ev);
+    }
+
+    // The microphone's answer to a played study. Everything about stability and
+    // tuning is the engine's business; this only reports what came back.
+    function onReadingDetection(note) {
+        if (S.sight) { collectSightPitch(note); return; }
+        if (!S.running || !S.reading || S.reading.kind !== 'play') return;
+        if (note) {
+            const sign = note.cents >= 0 ? '+' : '';
+            S.ui.$('nt-read-heard').innerHTML = T('play.detected', {
+                note: '<b>' + note.nameSharp + note.octave + '</b>', cents: sign + note.cents,
+            });
+        } else if (!S.readingBusy) {
+            S.ui.$('nt-read-heard').textContent = T('play.listening');
+        }
+        if (S.readingBusy) return;
+        const ev = S.reading.feed({
+            midi: note ? note.midi : null,
+            cents: note ? note.cents : 0,
+            hasSignal: !!note,
+        });
+        if (!ev.committed) return;
+        S.readingBusy = true;
+        resolveReadingRound(ev);
+    }
+
+    // What happens once a round is settled, whichever way it was answered.
+    // Three things, in this order, because that is the order they teach in:
+    // colour the note that was read, sound it, and only then say the words.
+    function resolveReadingRound(ev) {
+        const q = ev.question;
+        const target = q.target || q.notes[q.notes.length - 1];
+        const marks = S.reading.state.marks || (S.reading.state.marks = []);
+        marks.push(ev.correct ? 'ok' : 'err');
+
+        q.notes.forEach((_, i) => S.staff.setState(i, ev.correct ? 'ok' : 'err'));
+        if (ev.correct) S.ui.ding(S.reading.state.combo); else S.ui.buzz();
+
+        // Bind the sign to the sound. This is the one setting in the deck that
+        // changes what is learned rather than how hard it is.
+        if (S.readingSound && target) {
+            S.ui.playNoteTone(M().midiToFreq(target.sounding), 700);
+        }
+
+        const fb = S.ui.$('nt-read-feedback');
+        fb.textContent = readingFeedback(ev, q, target);
+        fb.className = 'nt-feedback ' + (ev.correct ? 'ok' : 'err');
+
+        // A missed note gets shown where it lives under the hand — the
+        // correction a teacher gives with a finger, not with a word.
+        if (!ev.correct && S.reading.kind === 'play' && S.readingNeckHelp) {
+            showReadingOnNeck(target);
+        } else if (!ev.correct && S.reading.kind === 'name') {
+            S.staff.ghost(target.pos, target.accidental);
+        }
+
+        readingHud();
+        const btn = S.ui.$('nt-read-hint');
+        if (btn) btn.disabled = true;
+        setTimeout(() => {
+            if (!S.running) return;
+            S.readingBusy = false;
+            if (ev.finished) finishReading();
+            else nextReadingRound();
+        }, ev.correct ? 850 : 1900);
+    }
+
+    // Name what happened, then what to do about it. The wrong-octave case is
+    // called out on its own: a player who read the letter correctly and put it
+    // in the wrong register has made a different mistake from one who misread
+    // the note, and telling them apart is most of the teaching.
+    function readingFeedback(ev, q, target) {
+        if (S.reading.kind === 'contour') {
+            // i18n-used: reading.fb.up, reading.fb.down, reading.fb.step, reading.fb.skip
+            const said = T('reading.fb.' + ev.expected);
+            return ev.correct ? T('reading.right_contour', { answer: said })
+                : T('reading.wrong_contour', { answer: said });
+        }
+        if (ev.correct) return T('reading.right_note', { note: target.name });
+        if (ev.missed) return T('reading.nothing_played', { note: target.name });
+        if (ev.wrongOctave) {
+            return T('reading.wrong_octave', {
+                note: target.name,
+                octave: target.octave + RD().OCTAVE_SHIFT / 12,
+            });
+        }
+        if (ev.detectedMidi != null) {
+            return T('play.wrong_note', {
+                played: M().nameOf(M().pitchClass(ev.detectedMidi), false),
+                wanted: target.name,
+            });
+        }
+        return T('reading.was_note', { note: target.name });
+    }
+
+    function showReadingOnNeck(target) {
+        const host = S.ui.$('nt-read-neck');
+        if (!host || !S.openMidi.length) return;
+        host.innerHTML = '';
+        S.readingBoard = window._noteTrainerFretboard(host);
+        S.readingBoard.render({ openMidi: S.openMidi, maxFret: S.maxFret });
+        const strict = S.reading.config.octaveStrict;
+        if (strict) {
+            // The exact pitch has exactly the places it has — usually two or
+            // three across the neck, and in first position only one.
+            const label = M().shortNameOf(M().pitchClass(target.sounding), false);
+            S.openMidi.forEach((open, i) => {
+                const fret = target.sounding - open;
+                if (fret >= 0 && fret <= S.maxFret) S.readingBoard.showTarget(i, [fret], label);
+            });
+        } else {
+            S.readingBoard.markDetected(target.sounding);
+        }
+    }
+
+    // ── Sight-reading ─────────────────────────────────────────────────
+    // The capstone: a line nobody has seen, read straight through against a
+    // click. What is graded is the pitch, in its beat — not the millisecond,
+    // which belongs to the rhythm game and which pitch detection could not
+    // honestly measure anyway. The lesson here is "do not stop".
+    const SIGHT_LEAD_MS = 500;
+    const SIGHT_EARLY_BEATS = 0.35;      // how far ahead of a beat a note still counts
+
+    async function startSight(lv, clef) {
+        const r = RD();
+        const phrase = r.buildPhrase(lv, clef, Math.random);
+        if (!phrase.notes.length) return;
+
+        S.reading = r.createReading({
+            level: Object.assign({}, lv, { keySigs: [phrase.keySig] }),
+            clef,
+            count: phrase.notes.length,
+            promote: lv.promote,
+            octaveStrict: !!lv.octaveStrict,
+            adaptive: false,
+            sequence: phrase.notes.map(n => r.fromDia(n.dia, n.alter)),
+            priorStats: readingStatsFor(clef),
+        });
+        S.reading.state.marks = [];
+
+        const bpm = lv.bpm || 60;
+        S.sight = {
+            phrase, bpm,
+            beatMs: 60000 / bpm,
+            beatsPerBar: phrase.beatsPerBar,
+            countInBeats: phrase.beatsPerBar,
+            idx: 0, clickIdx: 0,
+            heard: [],
+            t0Perf: 0, t0Ctx: 0,
+        };
+
+        if (!S.staff) S.staff = window._noteTrainerStaff(S.ui.$('nt-read-staff'));
+        S.staff.render({
+            clef, keySig: phrase.keySig, timeSig: [phrase.beatsPerBar, 4],
+            beatsPerBar: phrase.beatsPerBar, totalBeats: phrase.totalBeats,
+            noteGap: 52, fit: 'width',
+            notes: phrase.notes.map(n => ({
+                pos: r.staffPos(r.fromDia(n.dia, n.alter), clef),
+                beats: n.beats, beat: n.beat,
+            })),
+        });
+
+        S.ui.$('nt-read-ask').textContent = T('reading.ask.sight', { bpm });
+        S.ui.$('nt-read-choices').innerHTML = '';
+        const hintBtn = S.ui.$('nt-read-hint');
+        if (hintBtn) hintBtn.style.display = 'none';
+        S.ui.$('nt-read-neck').innerHTML = '';
+        S.ui.$('nt-read-feedback').textContent = '';
+        S.ui.$('nt-read-feedback').className = 'nt-feedback';
+        S.ui.clearMicError();
+        S.root.classList.add('is-reading', 'is-read-sight', 'is-read-played');
+        S.ui.$('nt-stop').style.display = '';
+        // The line is on screen and countable before the microphone is asked
+        // for — the seconds a device takes to open are seconds to look ahead in.
+        readingHud();
+
+        try {
+            await window._noteTrainerAudio.start({
+                deviceId: S.mic.deviceId, channel: S.mic.channel,
+                audioInputMode: S.mic.audioInputMode,
+            }, onDetection);
+        } catch (e) {
+            console.error('Note Trainer: sight-reading audio start failed', e);
+            S.ui.showMicError(e);
+            S.root.classList.remove('is-reading', 'is-read-sight');
+            stop();
+            return;
+        }
+
+        await S.ui.ensureFx();
+        const sync = S.ui.audioSync();
+        if (!sync) { stop(); return; }
+        S.sight.t0Ctx = sync.ctxTime + SIGHT_LEAD_MS / 1000;
+        S.sight.t0Perf = sync.perfMs + SIGHT_LEAD_MS;
+
+        saveProgress({ lastMode: 'reading', lastReadingLevel: lv.id });
+        S.running = true;
+        S.readingRaf = requestAnimationFrame(sightLoop);
+    }
+
+    // Every frame the microphone reports a pitch, it is stamped and kept. The
+    // judging then asks a much easier question than "when was the attack?" —
+    // "was this note sounding while it was due?" — which is a question pitch
+    // detection can actually answer.
+    function collectSightPitch(note) {
+        if (!S.running || !S.sight || !note) return;
+        S.sight.heard.push({ t: performance.now(), midi: note.midi });
+        if (S.sight.heard.length > 600) S.sight.heard.shift();
+        const sign = note.cents >= 0 ? '+' : '';
+        S.ui.$('nt-read-heard').innerHTML = T('play.detected', {
+            note: '<b>' + note.nameSharp + note.octave + '</b>', cents: sign + note.cents,
+        });
+    }
+
+    // What was played while this note was due. A pitch that matches wins even
+    // if it was not the loudest thing in the window; otherwise whatever was
+    // sounding most is reported, so the feedback can name it.
+    function pickSightPitch(fromMs, toMs, want, strict) {
+        if (!S.sight) return null;
+        const inWindow = S.sight.heard.filter(h => h.t >= fromMs && h.t <= toMs);
+        if (!inWindow.length) return null;
+        const match = inWindow.find(h => strict ? h.midi === want
+            : M().pitchClass(h.midi) === M().pitchClass(want));
+        if (match) return match.midi;
+        const tally = {};
+        let best = null, bestN = 0;
+        inWindow.forEach(h => {
+            tally[h.midi] = (tally[h.midi] || 0) + 1;
+            if (tally[h.midi] > bestN) { bestN = tally[h.midi]; best = h.midi; }
+        });
+        return best;
+    }
+
+    function sightLoop() {
+        if (!S.running || !S.sight || !S.reading) return;
+        const g = S.sight;
+        const now = performance.now() - g.t0Perf;
+        const countInMs = g.countInBeats * g.beatMs;
+        const totalBeats = g.phrase.totalBeats;
+
+        // Clicks for the count-in and for every beat of the line, scheduled on
+        // the audio clock so the pulse does not wobble with the frame rate.
+        const clicks = g.countInBeats + totalBeats;
+        while (g.clickIdx < clicks && g.clickIdx * g.beatMs < now + CLICK_SCHEDULE_AHEAD) {
+            const i = g.clickIdx++;
+            S.ui.clickAt(g.t0Ctx + (i * g.beatMs) / 1000, (i % g.beatsPerBar) === 0);
+        }
+
+        const beat = (now - countInMs) / g.beatMs;
+        if (beat >= -0.5) S.staff.playhead(Math.max(0, Math.min(beat, totalBeats)));
+
+        // Count the player in, then get out of the way.
+        if (beat < 0) {
+            const left = Math.ceil(-beat);
+            S.ui.$('nt-read-ask').textContent = T('reading.count_in', { n: left });
+        } else if (g.idx < g.phrase.notes.length) {
+            S.staff.setState(g.idx, 'active');
+        }
+
+        // Close every note whose beat has passed.
+        while (g.idx < g.phrase.notes.length) {
+            const n = g.phrase.notes[g.idx];
+            const endBeat = n.beat + n.beats;
+            if (beat < endBeat) break;
+            const from = g.t0Perf + countInMs + (n.beat - SIGHT_EARLY_BEATS) * g.beatMs;
+            const to = g.t0Perf + countInMs + endBeat * g.beatMs;
+            const q = S.reading.nextRound();
+            const want = q && q.target ? q.target.sounding : null;
+            const heard = want == null ? null
+                : pickSightPitch(from, to, want, S.reading.config.octaveStrict);
+            const ev = S.reading.resolvePlayed(heard);
+            const marks = S.reading.state.marks || (S.reading.state.marks = []);
+            marks.push(ev.correct ? 'ok' : 'err');
+            S.staff.setState(g.idx, ev.correct ? 'ok' : 'err');
+            g.idx++;
+            readingHud();
+        }
+
+        if (beat > totalBeats + 0.6) { finishReading(); return; }
+        S.readingRaf = requestAnimationFrame(sightLoop);
+    }
+
+    function stopReadingLoop() {
+        if (S.readingRaf) { cancelAnimationFrame(S.readingRaf); S.readingRaf = null; }
+        S.sight = null;
+    }
+
+    // ── Reading results ───────────────────────────────────────────────
+    async function finishReading() {
+        stopReadingLoop();
+        S.running = false;
+        if (window._noteTrainerAudio) window._noteTrainerAudio.stop();
+
+        const lv = currentReadingLevel();
+        const res = S.reading.result();
+        const clef = S.reading.clef;
+        const key = 'reading:' + (lv ? lv.id : '0');
+
+        const best = Object.assign({}, S.config.bestScores);
+        if (!best[key] || res.score > best[key]) best[key] = res.score;
+        const patch = { bestScores: best };
+
+        if (res.medal) {
+            const order = { bronze: 1, silver: 2, gold: 3 };
+            const medals = Object.assign({}, S.config.medals);
+            if (!medals[key] || order[res.medal] > order[medals[key]]) medals[key] = res.medal;
+            patch.medals = medals;
+        }
+
+        // Per-position record, kept per clef, so the picker keeps returning to
+        // the places on the staff this player does not yet know.
+        const all = Object.assign({}, S.config.readingStats);
+        const mine = Object.assign({}, all[clef]);
+        for (const k in S.reading.state.stats) {
+            const cur = mine[k] ? Object.assign({}, mine[k]) : { correct: 0, wrong: 0 };
+            cur.correct += S.reading.state.stats[k].correct;
+            cur.wrong += S.reading.state.stats[k].wrong;
+            mine[k] = cur;
+        }
+        all[clef] = mine;
+        patch.readingStats = all;
+
+        await saveProgress(patch);
+
+        let message = T('results.read_pct', { pct: Math.round(res.accuracy * 100) });
+        if (res.medal) message += ' ' + MEDAL_EMOJI[res.medal] + ' ' + T('medal.' + res.medal) + '!';
+
+        // Name the places, not the percentage: "you do not know the F on the
+        // top line" is a practice instruction; "78%" is not.
+        const weak = (res.weakest || []).filter(w => w.accuracy != null && w.accuracy < 1).slice(0, 2);
+        if (weak.length) {
+            message += ' ' + T('results.reading_weak', {
+                // An em dash, not brackets: a locale may name the note "Si (B)"
+                // already, and "Si (B) (3rd line)" reads like a footnote.
+                list: weak.map(w => w.note.name + ' — ' + staffPlaceLabel(w.pos)).join(', '),
+            });
+        }
+
+        S.ui.showResults(res, {
+            title: T('results.reading_title'),
+            message,
+            extra: readingPositionTable(res),
+        });
+        recordSession('reading', res, { readingKind: lv ? lv.kind : 'name' });
+    }
+
+    // Where a position sits, said the way a teacher points at it: lines and
+    // spaces are counted from the bottom, and anything outside is a ledger.
+    function staffPlaceLabel(pos) {
+        if (pos < 0) return T('reading.place.below');
+        if (pos > 8) return T('reading.place.above');
+        return pos % 2 === 0
+            ? T('reading.place.line', { n: pos / 2 + 1 })
+            : T('reading.place.space', { n: (pos - 1) / 2 + 1 });
+    }
+
+    function readingPositionTable(res) {
+        const rows = (res.positions || []).filter(p => p.attempts > 0);
+        if (!rows.length) return '';
+        const body = rows.map(p => {
+            const pct = p.accuracy == null ? 0 : Math.round(p.accuracy * 100);
+            const cls = p.accuracy >= 0.85 ? 'is-strong' : p.accuracy >= 0.6 ? 'is-mid' : 'is-weak';
+            return '<div class="nt-em-row" title="' + staffPlaceLabel(p.pos) + '">'
+                + '<span class="nt-em-abbr">' + p.note.shortName + '</span>'
+                + '<span class="nt-em-bar"><span class="nt-em-fill ' + cls + '" style="width:' + pct + '%"></span></span>'
+                + '<span class="nt-em-pct">' + pct + '%</span>'
+                + '</div>';
+        }).join('');
+        return '<details class="nt-re-diag"><summary>' + T('reading.by_position')
+            + '</summary><div class="nt-re-diag-body">' + body + '</div></details>';
     }
 
     // ── Rhythm training ───────────────────────────────────────────────
@@ -2482,11 +3378,12 @@
 
     // ── Binding / boot ────────────────────────────────────────────────
     async function loadData() {
-        const [cfg, tun, lvl, rlvl] = await Promise.all([
+        const [cfg, tun, lvl, rlvl, dlvl] = await Promise.all([
             fetch(API + '/config').then(r => r.json()).catch(() => ({})),
             fetch(API + '/tunings').then(r => r.json()).catch(() => ({ tunings: {} })),
             fetch(API + '/levels').then(r => r.json()).catch(() => ({ levels: [] })),
             fetch(API + '/rhythm-levels').then(r => r.json()).catch(() => ({ levels: [] })),
+            fetch(API + '/reading-levels').then(r => r.json()).catch(() => ({ levels: [] })),
         ]);
         S.config = Object.assign({
             bestScores: {}, medals: {}, levelStrings: {}, stats: {}, earStats: {},
@@ -2495,10 +3392,13 @@
             lastGame: 'fret', rhythmStrictness: 'precise', rhythmSensitivity: 'sensitive',
             rhythmLatencyMs: null,
             rhythmBpm: {}, rhythmStats: {}, lastRhythmLevel: null,
+            lastReadingLevel: null, readingClef: 'auto', readingSound: true,
+            readingNeckHelp: true, readingStats: {},
         }, cfg);
         S.tunings = tun.tunings || {};
         S.levels = lvl.levels || [];
         S.rhythmLevels = rlvl.levels || [];
+        S.readingLevels = dlvl.levels || [];
         S.levelStrings = Object.assign({}, S.config.levelStrings);
         S.rhythmBpm = Object.assign({}, S.config.rhythmBpm);
     }
@@ -2534,6 +3434,21 @@
         if (['tight', 'precise', 'easy'].includes(S.config.rhythmStrictness)) {
             S.rhythmStrictness = S.config.rhythmStrictness;
         }
+        // Reading: clef choice, the two teaching toggles and the last study.
+        if (['auto', 'treble', 'bass'].includes(S.config.readingClef)) {
+            S.readingClef = S.config.readingClef;
+        }
+        if (typeof S.config.readingSound === 'boolean') S.readingSound = S.config.readingSound;
+        if (typeof S.config.readingNeckHelp === 'boolean') S.readingNeckHelp = S.config.readingNeckHelp;
+        const soundEl = S.ui.$('nt-reading-sound');
+        if (soundEl) soundEl.checked = S.readingSound;
+        const neckEl = S.ui.$('nt-reading-neck');
+        if (neckEl) neckEl.checked = S.readingNeckHelp;
+        const wantReading = S.config.lastReadingLevel;
+        S.readingLevelId = S.readingLevels.some(l => l.id === wantReading)
+            ? wantReading
+            : (S.readingLevels.length ? S.readingLevels[0].id : null);
+
         seedRhythmLatency();
         const wantRhythm = S.config.lastRhythmLevel;
         S.rhythmLevelId = S.rhythmLevels.some(l => l.id === wantRhythm)
@@ -2542,10 +3457,13 @@
 
         // Restore the last game picked (each is its own card, not a mode).
         if (S.config.lastGame === 'rhythm') { S.gameKind = 'rhythm'; refreshSelection(); }
+        else if (S.config.lastGame === 'reading') { S.gameKind = 'reading'; refreshSelection(); }
         else if (S.config.lastMode === 'ear') selectEar();
         else { S.gameKind = 'fret'; refreshSelection(); }
 
-        S.ui.$('nt-instrument').addEventListener('change', () => { populateTunings(); renderLevels(); });
+        S.ui.$('nt-instrument').addEventListener('change', () => {
+            populateTunings(); renderLevels(); renderReadingLevels();
+        });
         S.ui.$('nt-tuning').addEventListener('change', renderLevels);
         S.ui.$('nt-start').addEventListener('click', () => { if (!S.running) start(); });
         S.ui.$('nt-stop').addEventListener('click', stop);
@@ -2563,6 +3481,22 @@
         S.ui.$('nt-ear-home-btn').addEventListener('click', () => {
             if (S.ear) S.ui.playNoteTone(S.ear.rootFreq, 650);
         });
+
+        // Reading controls.
+        const clefSeg = S.ui.$('nt-reading-clef');
+        if (clefSeg) clefSeg.querySelectorAll('.nt-seg').forEach(b => {
+            b.addEventListener('click', () => setReadingClef(b.getAttribute('data-clef')));
+        });
+        if (soundEl) soundEl.addEventListener('change', () => setReadingSound(soundEl.checked));
+        const lessonNextBtn = S.ui.$('nt-lesson-next');
+        if (lessonNextBtn) lessonNextBtn.addEventListener('click', lessonNext);
+        const lessonSkipBtn = S.ui.$('nt-lesson-skip');
+        if (lessonSkipBtn) lessonSkipBtn.addEventListener('click', lessonDone);
+        const lessonBackBtn = S.ui.$('nt-lesson-back');
+        if (lessonBackBtn) lessonBackBtn.addEventListener('click', lessonBack);
+        const hintBtn = S.ui.$('nt-read-hint');
+        if (hintBtn) hintBtn.addEventListener('click', onReadingHint);
+        if (neckEl) neckEl.addEventListener('change', () => setReadingNeckHelp(neckEl.checked));
 
         // Rhythm-training controls.
         S.ui.$('nt-bpm-down').addEventListener('click', () => {
@@ -2652,6 +3586,8 @@
             .then(() => Promise.all([
                 _loadScript(API + '/utils/game.js'),
                 _loadScript(API + '/utils/ear.js'),
+                _loadScript(API + '/utils/reading.js'),
+                _loadScript(API + '/utils/staff.js'),
                 _loadScript(API + '/utils/rhythm.js'),
                 _loadScript(API + '/utils/rhythm-view.js'),
                 _loadScript(API + '/utils/onset.js'),

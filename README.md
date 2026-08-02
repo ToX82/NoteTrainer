@@ -7,9 +7,10 @@ It began as a Slopsmith plugin — which is why the screen and the game engines
 still carry that shape — but the plugin is no longer part of this project, and
 nothing here depends on it.
 
-Practice the notes on the guitar/bass fretboard, train your ear and your timing;
-the microphone judges every note in real time. Fully translatable (English and
-Italian ship with it), in a bright game-style theme with a dark variant.
+Practice the notes on the guitar/bass fretboard, train your ear and your timing,
+and learn to read the staff; the microphone judges every note in real time.
+Fully translatable (English and Italian ship with it), in a bright game-style
+theme with a dark variant.
 
 ## How it works
 
@@ -22,7 +23,7 @@ server at all:
 | --- | --- |
 | `GET/POST /config` | `localStorage` |
 | `GET /tunings` | `docs/data/tunings.json` |
-| `GET /levels`, `/rhythm-levels` | `docs/data/*.json` |
+| `GET /levels`, `/rhythm-levels`, `/reading-levels` | `docs/data/*.json` |
 | `GET /utils/*.js`, `/workers/*.js` | the same files, served next to the page |
 
 `screen.js` builds absolute URLs (`/api/plugins/note-trainer/…`). The shim patches
@@ -45,7 +46,7 @@ docs/                    the published site
     utils-manifest.js    generated: the util list read out of screen.js
   i18n/en.json it.json   one flat file per locale
   screen.html screen.js utils/ workers/ data/
-tests/js/                125 cases over the game logic, run with `npm test`
+tests/js/                171 cases over the game logic, run with `npm test`
 tools/
   check-i18n.py          verifies every string is declared, used and translated
   manifest.py            regenerates the util list read out of screen.js
@@ -152,6 +153,110 @@ may never have ("hearing a whistle? that is your speakers going back into the
 mic") rather than as a rule — in the monitoring hint, the rhythm warning and the
 calibration checklist alike.
 
+## Reading the staff
+
+The fourth game — *The Page* — teaches musical notation, and it is built the
+way a teacher builds it rather than the way a flashcard app does.
+
+The difference matters. An app that shows a dot and asks for a letter trains
+*decoding*: the player learns to translate symbol → name → finger, and that
+chain saturates around 60 bpm. Real readers do not do that. They learn a few
+notes by absolute position and read everything else as a **distance** from
+them, and they bind the symbol to a sound and to a hand position at the same
+moment. Four rules follow from that, and the module is shaped by them:
+
+- **Position and interval before names.** The first two studies never name a
+  note at all — they ask whether the second one is higher or lower, a step or a
+  skip. That is what the picture actually shows.
+- **Three anchors, not an alphabet.** `LANDMARKS` in `utils/reading.js` is the
+  G on the second line, the middle line, and middle C on its ledger (and the
+  bass-clef equivalents). The setup panel draws them under the clef in play.
+- **Symbol → sound → hand, together.** Every answered note is sounded (the
+  *Sound every note* toggle), and a missed one is drawn on the neck where it
+  lies. From the fourth study on the microphone is the answer: the player reads
+  the note and *plays* it.
+- **Do not stop.** The last study is a phrase nobody has seen, read against a
+  click, straight through.
+
+### The explanation comes first
+
+A study you have to work out from its title teaches guessing, so each one opens
+with one to three cards that **show** the thing before asking for it. The
+picture on a card is not drawn in the data file — it is built by
+`buildFigure(kind, level, clef)` from that study's own range and the clef in
+play, so the card about ledger lines shows the notes that study will really ask
+for, and shows them correctly to a bassist reading bass clef. `figure` names a
+shape (`landmarks`, `step`, `skip`, `ledger`, `accidentals`, `keysig`,
+`phrase`, …); the code works out the notes.
+
+It is shown **every time a study is opened**, and *Straight to the exercise* is
+on every card but the last (where it would only duplicate the primary button).
+Hiding the explanation once read would make the one thing a stuck player needs
+the hardest thing to find, and re-reading it costs whoever does not need it a
+single click. *Back* returns through the cards.
+
+### Hints
+
+Inside a study there is one hint per question, and it never gives the answer —
+a hint that answers is a slower way of being told, and it teaches the player to
+ask again. What it gives is the **method**:
+
+- a question about direction gets a dashed rule drawn through the first note,
+  so higher-or-lower stops being a memory test and becomes something the eye
+  can see;
+- a question about a name gets the **nearest landmark**, drawn beside the note
+  in the section accent and named — *"a third below B"*. If the note asked for
+  happens to be a landmark itself, `nearestLandmark()` skips it and measures
+  from another one, because "it is the B" would simply be the answer;
+- a played study additionally shows where the note lies on the neck.
+
+Taking one costs what a second attempt costs (half the round), which is
+recorded in the engine so scoring stays in one place. Sight-reading has no
+hint: the line does not wait.
+
+Two facts about fretted instruments are baked in and must not drift: guitar and
+bass are both written an **octave above** what they sound (`OCTAVE_SHIFT`), and
+the clef follows the instrument (`clefForInstrument`) unless the deck overrides
+it. The staff shows the written pitch; the microphone hears `written − 12`.
+
+Early studies pass on the letter in any octave; from first position onward
+`octaveStrict` demands the exact pitch, because that is where reading and hand
+become one movement.
+
+### What the sight-reading study grades, and what it does not
+
+It grades **the right pitch in the right beat** — not the millisecond. Pitch
+detection smooths over several frames, so it can answer "was this note sounding
+while it was due?" honestly and could not answer "when exactly was the attack?"
+at all. Millisecond timing is the rhythm game's job, where onset detection and
+a measured input delay make it real. So the reading module needs no latency
+gate: the judging window is a whole beat wide.
+
+### The two new modules
+
+```
+docs/utils/reading.js   the engine: diatonic maths, clefs, key signatures,
+                        question generation, scoring, sight-reading phrases,
+                        teaching figures
+docs/utils/staff.js     the renderer: staff, clefs, noteheads, stems, flags,
+                        ledger lines, accidentals, barlines, playhead
+docs/data/reading-levels.json   the ten studies and their explanation cards
+```
+
+`reading.js` stores a note as `{ step, octave, alter }` and derives MIDI from
+it, never the reverse: F♯4 and G♭4 are the same pitch and **different places on
+the page**, and a reader has to see the difference. Practice statistics are
+keyed by staff position (per clef, since position 2 is a G in treble and a B in
+bass), so the picker keeps returning to the places a player does not yet know
+and the results card can say *"the F on the top line"* instead of *"78%"*.
+
+`staff.js` draws the clefs as **stroked paths**, not filled glyphs. Every icon
+in this app is a stroke, the Unicode Musical Symbols block has no dependable
+font coverage, and an embedded music font would be a megabyte of asset for two
+shapes. A notation library was rejected for the reason everything else here is
+hand-rolled: it would need the build step this site deliberately does without.
+The renderer knows nothing about pitch — only about where to put ink.
+
 ## Latency gate
 
 A rhythm drill played before the input delay is measured scores nothing: every
@@ -166,10 +271,10 @@ setup screen is outlined in warning colour and its button is the primary one.
 ## Theme
 
 `app/base.css` keeps every layout rule exactly as the plugin wrote it.
-`app/theme.css` repaints it: three section accents — coral for the time, cyan
-for the neck, violet for the ear — rounded type, chunky buttons and cards with a
-solid bottom edge that compresses on `:active`, thick pill progress bars, big
-answer targets. It works by remapping the plugin's own `--nt-*` design tokens
+`app/theme.css` repaints it: four section accents — coral for the time, cyan
+for the neck, violet for the ear, amber for the page — rounded type, chunky
+buttons and cards with a solid bottom edge that compresses on `:active`, thick
+pill progress bars, big answer targets. It works by remapping the plugin's own `--nt-*` design tokens
 and then overriding shape on the handful of components that carry the look, so
 the geometry stays in one place. `.interface-design/system.md` writes the rules
 down.
@@ -186,7 +291,12 @@ the terms you set, on the right. The fret panel opens with the neck drawn out �
 the real fretboard renderer, showing the tuning currently chosen beside it — and
 the ear's three difficulty tiers are cards in the panel rather than a switch in
 the deck, because each of them keeps its own medal and best score, exactly like
-a fretboard level or a rhythm drill.
+a fretboard level or a rhythm drill. The reading panel opens the same way, with
+the clef in play and its three anchors drawn under it.
+
+Inside a reading session the lesson carries a bar of pips, one per question,
+filled green or red as they are answered — the run's shape, seen rather than
+counted, and an end the player can see coming.
 
 `app/theme.js` runs from the document head, before the first paint, and stamps
 `data-theme` on `<html>`: the player's stored choice if there is one, the
@@ -217,8 +327,8 @@ file in `docs/utils/` that nothing loads.
 
 The test suite came from the original plugin and still covers the parts worth
 covering — note maths, the game and ear engines, rhythm building and judging,
-onset detection, achievements, YIN pitch detection — running directly against
-the files the site ships.
+onset detection, achievements, YIN pitch detection, and the reading engine's
+diatonic maths — running directly against the files the site ships.
 
 ## Running locally
 
