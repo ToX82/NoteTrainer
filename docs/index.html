@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Note Trainer</title>
+<meta name="description" content="Learn the notes on the guitar and bass fretboard, train your ear and your timing — your microphone checks every note in real time.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131f24" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>">
+<link rel="stylesheet" href="app/page.css">
+<link rel="stylesheet" href="app/base.css">
+<link rel="stylesheet" href="app/theme.css">
+</head>
+<body>
+
+<!-- The plugin screen reserves 80px of top padding for the host's toolbar;
+     the standalone site puts its own bar there. -->
+<header class="nt-topbar">
+  <span class="nt-topbar-title" data-i18n="app.title">Note Trainer</span>
+  <!-- The plugin's own <select id="nt-mic"> is moved in here by app/input.js,
+       alongside the level meter: choosing the input is the first thing a player
+       has to get right, so it lives in the chrome, not inside a setup grid. -->
+  <span id="nt-input" class="nt-input"><span class="nt-input-icon">🎙</span></span>
+  <span id="nt-lang" class="nt-lang"></span>
+  <a class="nt-topbar-link" href="settings.html" data-i18n="page.settings">Settings</a>
+</header>
+
+<div id="nt-boot-status" class="nt-boot">
+  <h1>Note Trainer</h1>
+  <p data-i18n="page.loading">Loading…</p>
+</div>
+
+<div id="nt-mount"></div>
+
+<script src="app/i18n.js"></script>
+<script src="app/utils-manifest.js"></script>
+<script src="app/shim.js"></script>
+<script src="app/input.js"></script>
+<script src="app/boot.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "lastInstrument": "guitar-6",
+  "lastTuning": "Standard",
+  "lastNoteSet": "natural",
+  "lastMode": "relax",
+  "lastEarTier": "easy",
+  "earMode": "note",
+  "earUseHome": true,
+  "lastGame": "fret",
+  "lastRhythmLevel": null,
+  "rhythmStrictness": "tight",
+  "rhythmSensitivity": "balanced",
+  "rhythmLatencyMs": null,
+  "rhythmBpm": {},
+  "rhythmStats": {},
+  "maxFret": 12,
+  "unlockedLevel": 1,
+  "bestScores": {},
+  "medals": {},
+  "levelStrings": {},
+  "stats": {},
+  "earStats": {},
+  "achievements": [],
+  "lifetime": {
+    "correct": 0,
+    "wrong": 0,
+    "sessions": 0
+  }
+}

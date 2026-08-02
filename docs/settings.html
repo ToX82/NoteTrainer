@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Note Trainer — Settings</title>
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131f24" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>">
+<link rel="stylesheet" href="app/page.css">
+<link rel="stylesheet" href="app/theme.css">
+</head>
+<body>
+
+<header class="nt-topbar">
+  <span class="nt-topbar-title" data-i18n="app.title">Note Trainer</span>
+</header>
+
+<main class="nt-settings-page">
+  <a class="nt-back" href="index.html" data-i18n="page.back">← Back to practice</a>
+  <div id="nt-settings-mount"></div>
+</main>
+
+<script src="app/i18n.js"></script>
+<script src="app/shim.js"></script>
+<script>
+// The plugin's settings panel is a fragment with an inline <script> that talks
+// to the same /config endpoint the shim serves. innerHTML never executes an
+// injected script, so it is re-created as a live element after mounting.
+(function () {
+    'use strict';
+    const mount = document.getElementById('nt-settings-mount');
+    window.i18n.ready
+        .then(() => {
+            window.i18n.applyDom(document);
+            return fetch(new URL('settings-panel.html', window.noteTrainerShim.BASE).href);
+        })
+        .then((r) => (r.ok ? r.text() : Promise.reject(new Error('HTTP ' + r.status))))
+        .then((html) => {
+            mount.innerHTML = html;
+            window.i18n.applyDom(mount);
+            mount.querySelectorAll('script').forEach((old) => {
+                const s = document.createElement('script');
+                s.textContent = old.textContent;
+                old.replaceWith(s);
+            });
+        })
+        .catch((e) => {
+            console.error('Note Trainer:', e);
+            mount.textContent = 'Could not load the settings panel.';
+        });
+})();
+</script>
+</body>
+</html>

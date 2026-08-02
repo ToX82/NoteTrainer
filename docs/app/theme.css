@@ -1,0 +1,743 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Note Trainer — playful theme.
+   A game-app skin over app/base.css: bright single-hue palette, rounded
+   type, chunky "pressable" buttons with a solid bottom edge, generous radii.
+   Only paint and shape are set here — every layout rule still comes from
+   base.css, so the plugin's structure stays the single source of geometry.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Palette */
+  --du-green: #58cc02;
+  --du-green-dark: #48a802;
+  --du-green-soft: #e9ffd6;
+  --du-blue: #1cb0f6;
+  --du-blue-dark: #1899d6;
+  --du-red: #ff4b4b;
+  --du-red-dark: #e02f2f;
+  --du-red-soft: #ffe3e3;
+  --du-yellow: #ffc800;
+  --du-yellow-dark: #e0a500;
+  --du-purple: #ce82ff;
+
+  /* Neutrals */
+  --du-bg: #ffffff;
+  --du-bg-2: #f7f7f7;
+  --du-bg-3: #efefef;
+  --du-line: #e5e5e5;
+  --du-line-2: #d4d4d4;
+  --du-text: #3c3c3c;
+  --du-muted: #777777;
+  --du-faint: #afafaf;
+
+  /* The pressable edge under every button and card */
+  --du-edge: 4px;
+
+  --du-font: ui-rounded, "SF Pro Rounded", "Varela Round", "Nunito",
+             "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --du-bg: #131f24;
+    --du-bg-2: #1b2b31;
+    --du-bg-3: #22353c;
+    --du-line: #2c4048;
+    --du-line-2: #3a545e;
+    --du-text: #f1f7fb;
+    --du-muted: #9fb3bc;
+    --du-faint: #6f8a95;
+    --du-green-soft: #1f3d17;
+    --du-red-soft: #40201f;
+  }
+}
+
+/* ── Page shell ──────────────────────────────────────────────────── */
+html, body {
+  background: var(--du-bg);
+  color: var(--du-text);
+  font-family: var(--du-font);
+}
+
+.nt-topbar {
+  height: 60px;
+  background: var(--du-bg);
+  border-bottom: 2px solid var(--du-line);
+  backdrop-filter: none;
+  gap: 14px;
+}
+
+.nt-topbar-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--du-green);
+}
+
+.nt-topbar-link {
+  color: var(--du-muted);
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.nt-topbar-link:hover, .nt-topbar-link:focus-visible { color: var(--du-green); }
+
+.nt-lang { margin-left: auto; }
+.nt-lang-select {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 2px solid var(--du-line);
+  background: var(--du-bg);
+  color: var(--du-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.nt-lang-select:hover { border-color: var(--du-line-2); }
+.nt-lang + .nt-topbar-link { margin-left: 0; }
+
+.nt-boot { color: var(--du-muted); font-weight: 600; }
+.nt-boot h1 { color: var(--du-text); font-weight: 800; }
+.nt-back { color: var(--du-muted); font-weight: 800; text-transform: uppercase; font-size: 12px; letter-spacing: 0.04em; }
+.nt-back:hover, .nt-back:focus-visible { color: var(--du-green); }
+
+/* ── Token remap: everything base.css paints with ────────────────── */
+.note-trainer-root {
+  color-scheme: light;
+  --nt-font: var(--du-font);
+
+  --nt-bg-0: var(--du-bg); --nt-bg-1: var(--du-bg);
+  --nt-surface-1: var(--du-bg); --nt-surface-2: var(--du-bg-2); --nt-surface-3: var(--du-bg-3);
+  --nt-inset: var(--du-bg-2); --nt-inset-deep: var(--du-line);
+
+  --nt-line-1: var(--du-line); --nt-line-2: var(--du-line-2);
+
+  --nt-text: var(--du-text); --nt-dim: var(--du-text);
+  --nt-muted: var(--du-muted); --nt-faint: var(--du-faint);
+
+  --nt-accent: var(--du-green); --nt-accent-edge: var(--du-green);
+  --nt-accent-deep: var(--du-green-dark); --nt-accent-soft: var(--du-green-soft);
+
+  --nt-ok: var(--du-green); --nt-ok-edge: var(--du-green-dark);
+  --nt-err: var(--du-red); --nt-err-edge: var(--du-red-dark);
+  --nt-hint: var(--du-yellow-dark); --nt-hint-edge: var(--du-yellow-dark);
+
+  --nt-r-sm: 12px; --nt-r-md: 16px; --nt-r-lg: 16px;
+  --nt-shadow-1: none;
+  --nt-ring: 0 0 0 4px rgba(88, 204, 2, 0.35);
+
+  background: var(--du-bg);
+  padding-top: 76px;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .note-trainer-root { color-scheme: dark; }
+}
+
+/* ── Type ────────────────────────────────────────────────────────── */
+.note-trainer-root h1 { font-weight: 800; letter-spacing: -0.01em; }
+.note-trainer-root h2 { font-weight: 800; }
+.nt-tagline { color: var(--du-muted); font-weight: 600; }
+
+.nt-section-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--du-muted);
+}
+.nt-section-label span { font-weight: 600; color: var(--du-faint); }
+
+.nt-brand-mark {
+  background: var(--du-green);
+  border-color: var(--du-green);
+  color: #fff;
+}
+
+/* ── Buttons: solid bottom edge, pressed on :active ──────────────── */
+.nt-btn {
+  border: none;
+  border-bottom: var(--du-edge) solid var(--du-green-dark);
+  border-radius: 16px;
+  background: var(--du-green);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  min-height: 46px;
+  padding: 0 22px;
+  transition: filter .1s ease, transform .05s ease, border-bottom-width .05s ease;
+}
+.nt-btn:hover { filter: brightness(1.06); }
+.nt-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+  filter: brightness(0.98);
+}
+
+.nt-btn.secondary {
+  background: var(--du-bg);
+  border: 2px solid var(--du-line);
+  border-bottom: var(--du-edge) solid var(--du-line);
+  color: var(--du-muted);
+}
+.nt-btn.secondary:hover { background: var(--du-bg-2); color: var(--du-text); }
+.nt-btn.secondary:active { border-bottom-width: 2px; }
+
+.nt-tempo-btn {
+  border-radius: 14px;
+  border: 2px solid var(--du-line);
+  border-bottom: var(--du-edge) solid var(--du-line);
+  background: var(--du-bg);
+  color: var(--du-muted);
+  font-weight: 800;
+}
+.nt-tempo-btn:hover { background: var(--du-bg-2); color: var(--du-text); }
+.nt-tempo-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+
+/* ── Panels and cards ────────────────────────────────────────────── */
+.nt-panel {
+  background: var(--du-bg);
+  border: 2px solid var(--du-line);
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.nt-game-card, .nt-level-card {
+  border: 2px solid var(--du-line);
+  border-bottom: var(--du-edge) solid var(--du-line);
+  border-radius: 18px;
+  background: var(--du-bg);
+  transition: border-color .12s ease, background .12s ease, transform .05s ease;
+}
+.nt-game-card::before, .nt-level-card::before { display: none; }
+.nt-game-card:hover, .nt-level-card:hover { background: var(--du-bg-2); border-color: var(--du-line-2); }
+.nt-game-card:active, .nt-level-card:active { transform: translateY(2px); border-bottom-width: 2px; }
+.nt-game-card.active, .nt-level-card.active {
+  border-color: var(--du-green);
+  background: var(--du-green-soft);
+}
+
+.nt-gc-title, .nt-level-card .nt-lc-title { font-weight: 800; font-size: 15px; }
+.nt-gc-desc, .nt-level-card .nt-lc-desc { color: var(--du-muted); font-weight: 600; font-size: 12.5px; }
+
+.nt-gc-icon {
+  width: 38px; height: 38px;
+  border-radius: 14px;
+  background: var(--du-bg-2);
+  border: 2px solid var(--du-line);
+  color: var(--du-muted);
+}
+.nt-game-card.active .nt-gc-icon {
+  background: var(--du-green);
+  border-color: var(--du-green);
+  color: #fff;
+}
+.nt-gc-icon .nt-ic { width: 20px; height: 20px; }
+
+.nt-lc-chip {
+  background: var(--du-bg-2);
+  color: var(--du-muted);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-weight: 700;
+  font-size: 11px;
+}
+.nt-level-card.active .nt-lc-chip { background: rgba(255,255,255,0.75); color: var(--du-green-dark); }
+
+.nt-lc-num {
+  background: var(--du-green);
+  color: #fff;
+  border-radius: 999px;
+}
+
+/* Progress bars: thick pills, the way a game shows a goal. */
+.nt-lc-bar {
+  height: 14px;
+  border-radius: 999px;
+  background: var(--du-line);
+  border: none;
+}
+.nt-lc-bar > i {
+  background: var(--du-green);
+  border-radius: 999px;
+}
+.nt-lc-pct { font-weight: 800; color: var(--du-muted); }
+
+/* ── Inputs ──────────────────────────────────────────────────────── */
+.note-trainer-root select {
+  min-height: 46px;
+  border: 2px solid var(--du-line);
+  border-radius: 14px;
+  background: var(--du-bg);
+  color: var(--du-text);
+  font-weight: 700;
+  font-size: 14px;
+}
+.note-trainer-root select:hover { border-color: var(--du-line-2); }
+.nt-field > span { font-size: 12px; font-weight: 800; letter-spacing: 0.05em; color: var(--du-muted); }
+
+/* Segmented controls read as pills; the active one is the accent. */
+.nt-ear-diff {
+  background: var(--du-bg-2);
+  border: 2px solid var(--du-line);
+  border-radius: 999px;
+  padding: 4px;
+}
+.nt-ear-diff .nt-seg {
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--du-muted);
+  min-height: 36px;
+}
+.nt-ear-diff .nt-seg:hover { color: var(--du-text); background: transparent; }
+.nt-ear-diff .nt-seg.active {
+  background: var(--du-green);
+  color: #fff;
+  box-shadow: 0 2px 0 var(--du-green-dark);
+}
+
+/* ── HUD ─────────────────────────────────────────────────────────── */
+.nt-prompt .nt-prompt-lead { font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--du-muted); }
+.nt-prompt .nt-note { font-size: 42px; font-weight: 800; letter-spacing: -0.02em; }
+.nt-stat .nt-stat-val { font-size: 24px; font-weight: 800; }
+.nt-stat .nt-stat-lbl { font-weight: 800; font-size: 10.5px; letter-spacing: 0.06em; color: var(--du-muted); }
+.nt-stat.combo .nt-stat-val { color: var(--du-yellow-dark); }
+
+.nt-detected {
+  background: var(--du-bg-2);
+  border-radius: 14px;
+  padding: 8px 12px;
+  font-weight: 700;
+  color: var(--du-muted);
+}
+
+/* Feedback banners: the loud, unmissable strip a game uses. */
+.nt-feedback {
+  font-weight: 800;
+  font-size: 15px;
+  border-radius: 16px;
+  padding: 0 4px;
+  min-height: 30px;
+}
+.nt-feedback.ok { color: var(--du-green-dark); }
+.nt-feedback.err { color: var(--du-red-dark); }
+.nt-feedback.hint { color: var(--du-yellow-dark); }
+
+/* ── Ear training ────────────────────────────────────────────────── */
+.nt-choice {
+  border: 2px solid var(--du-line);
+  border-bottom: var(--du-edge) solid var(--du-line);
+  border-radius: 16px;
+  background: var(--du-bg);
+  color: var(--du-text);
+  font-weight: 800;
+  /* Answer buttons are the thing you actually hit: big targets, big type. */
+  min-width: 84px;
+  min-height: 64px;
+  font-size: 20px;
+  transition: transform .05s ease, background .12s ease, border-color .12s ease;
+}
+.nt-ear-choices { gap: 12px; }
+.nt-choice:hover:not(:disabled) { background: var(--du-bg-2); }
+.nt-choice:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 2px; }
+.nt-choice.correct {
+  background: var(--du-green-soft);
+  border-color: var(--du-green);
+  color: var(--du-green-dark);
+}
+.nt-choice.wrong {
+  background: var(--du-red-soft);
+  border-color: var(--du-red);
+  color: var(--du-red-dark);
+}
+.nt-ear-ask { font-weight: 800; font-size: 17px; color: var(--du-text); }
+.nt-viz-core { background: var(--du-green); color: #fff; }
+
+.nt-th-head, .nt-em-head { font-weight: 800; color: var(--du-text); }
+.nt-th-abbr, .nt-em-abbr { font-weight: 800; color: var(--du-green-dark); }
+.nt-em-fill.is-strong { background: var(--du-green); }
+.nt-em-fill.is-mid { background: var(--du-yellow); }
+.nt-em-fill.is-weak { background: var(--du-red); }
+
+/* ── Toggle ──────────────────────────────────────────────────────── */
+.nt-toggle-track { background: var(--du-line); border-color: var(--du-line-2); }
+.nt-toggle input:checked + .nt-toggle-track { background: var(--du-green); border-color: var(--du-green-dark); }
+.nt-toggle-title { font-weight: 800; color: var(--du-text); }
+.nt-toggle-desc { color: var(--du-muted); font-weight: 600; }
+
+/* ── Results / calibration overlays ──────────────────────────────── */
+.nt-results-card, .nt-calib-card {
+  border-radius: 22px;
+  border: 2px solid var(--du-line);
+  background: var(--du-bg);
+}
+.nt-results-card h2 { font-size: 24px; }
+.nt-medal { font-size: 56px; }
+.nt-results-msg { color: var(--du-muted); font-weight: 700; }
+.nt-re-verdict, .nt-re-advice, .nt-re-diag {
+  border-radius: 16px;
+  border: 2px solid var(--du-line);
+}
+.nt-re-advice-h { font-weight: 800; color: var(--du-text); }
+.nt-cs { border-radius: 999px; font-weight: 800; }
+.nt-cs.is-now { background: var(--du-green); color: #fff; border-color: var(--du-green); }
+.nt-cs.is-done { color: var(--du-green-dark); border-color: var(--du-green); }
+.nt-calib-verdict { border-radius: 999px; font-weight: 800; }
+
+/* ── Toasts ──────────────────────────────────────────────────────── */
+.nt-toast {
+  border-radius: 18px;
+  border: 2px solid var(--du-green);
+  border-bottom-width: var(--du-edge);
+  background: var(--du-bg);
+  font-weight: 700;
+}
+
+/* ── Warnings ────────────────────────────────────────────────────── */
+.nt-warn {
+  border-radius: 16px;
+  border: 2px solid var(--du-yellow);
+  background: rgba(255, 200, 0, 0.10);
+  color: var(--du-text);
+  font-weight: 600;
+}
+.nt-setup-hint { font-weight: 700; color: var(--du-muted); }
+.nt-setup-hint.is-warn { color: var(--du-yellow-dark); }
+
+/* ── Settings page (the plugin's own panel) ──────────────────────────
+   The panel ships its own <style> inside the fragment, and that block is
+   injected into the body — later in document order than this file. Equal
+   specificity would lose, so every rule here is scoped through the page
+   wrapper to outrank it. */
+.nt-settings-page .note-trainer-settings {
+  --nts-text: var(--du-text);
+  --nts-dim: var(--du-text);
+  --nts-muted: var(--du-muted);
+  --nts-inset: var(--du-bg);
+  --nts-line: var(--du-line);
+  --nts-accent: var(--du-green);
+  --nts-ok: var(--du-green);
+  font-family: var(--du-font);
+  font-size: 14px;
+  font-weight: 600;
+}
+.nt-settings-page .note-trainer-settings .nts-card {
+  background: var(--du-bg);
+  border: 2px solid var(--du-line);
+  border-radius: 18px;
+}
+.nt-settings-page .note-trainer-settings h3 { font-weight: 800; font-size: 17px; }
+.nt-settings-page .note-trainer-settings select {
+  min-height: 46px;
+  border: 2px solid var(--du-line);
+  border-radius: 14px;
+  background: var(--du-bg);
+  color: var(--du-text);
+  font-weight: 700;
+}
+.nt-settings-page .note-trainer-settings button {
+  border-radius: 16px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  min-height: 46px;
+}
+.nt-settings-page .note-trainer-settings .nts-danger {
+  border: none;
+  border-bottom: var(--du-edge) solid var(--du-red-dark);
+  background: var(--du-red);
+  color: #fff;
+}
+.nt-settings-page .note-trainer-settings .nts-danger:hover { filter: brightness(1.06); background: var(--du-red); }
+.nt-settings-page .note-trainer-settings .nts-danger:active { transform: translateY(2px); border-bottom-width: 2px; }
+.nt-settings-page .note-trainer-settings .nts-status { font-weight: 800; color: var(--du-green-dark); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nt-btn, .nt-choice, .nt-game-card, .nt-level-card, .nt-tempo-btn { transition: none; }
+  .nt-btn:active, .nt-choice:active, .nt-tempo-btn:active { transform: none; }
+}
+
+/* ── Input bar: device, level meter, monitoring ───────────────────────
+   Choosing the input is the first thing a player has to get right, so it
+   sits in the chrome next to language and settings rather than inside the
+   setup grid. The meter is the answer to "is it hearing me?". */
+.nt-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 6px 5px 12px;
+  border: 2px solid var(--du-line);
+  border-radius: 999px;
+  background: var(--du-bg);
+}
+
+.nt-input-icon { font-size: 14px; line-height: 1; }
+
+.nt-input-select.nt-input-select {
+  width: auto;
+  max-width: 250px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--du-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nt-meter {
+  width: 68px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--du-line);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.nt-meter > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--du-green);
+  transition: width .06s linear;
+}
+.nt-meter.is-hot > i { background: var(--du-green); box-shadow: 0 0 8px var(--du-green); }
+
+.nt-input-status {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--du-muted);
+  white-space: nowrap;
+}
+.nt-input-status.is-ok { color: var(--du-green-dark); }
+.nt-input-status.is-warn { color: var(--du-yellow-dark); }
+.nt-input-status.is-err { color: var(--du-red-dark); }
+
+.nt-input-monitor {
+  min-width: 34px;
+  min-height: 34px;
+  border: 2px solid var(--du-line);
+  border-radius: 999px;
+  background: var(--du-bg);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.nt-input-monitor:hover { background: var(--du-bg-2); }
+.nt-input-monitor.is-on {
+  background: var(--du-green);
+  border-color: var(--du-green-dark);
+}
+
+/* First-run panel: deliberately loud, and gone for good once the app has
+   actually heard the instrument once. While it is up the screen moves down
+   rather than being covered. */
+body.has-input-hint .note-trainer-root { padding-top: 230px; }
+@media (max-width: 820px) {
+  body.has-input-hint .note-trainer-root { padding-top: 330px; }
+}
+.nt-input-hint {
+  position: fixed;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: min(560px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 2px solid var(--du-green);
+  border-bottom-width: var(--du-edge);
+  border-radius: 18px;
+  background: var(--du-green-soft);
+  color: var(--du-text);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+.nt-input-hint.is-ok { border-color: var(--du-green-dark); }
+.nt-ih-body b { font-size: 15px; font-weight: 800; }
+.nt-ih-body p { margin: 4px 0 0; font-size: 13px; font-weight: 600; line-height: 1.45; color: var(--du-text); }
+.nt-ih-actions { margin-left: auto; display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; }
+.nt-ih-go {
+  min-height: 42px;
+  padding: 0 18px;
+  border: none;
+  border-bottom: var(--du-edge) solid var(--du-green-dark);
+  border-radius: 14px;
+  background: var(--du-green);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+.nt-ih-go:active { transform: translateY(2px); border-bottom-width: 2px; }
+.nt-ih-go:disabled { opacity: 0.6; cursor: default; }
+.nt-ih-skip {
+  border: none;
+  background: none;
+  color: var(--du-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.nt-ih-skip:hover { color: var(--du-text); }
+
+@media (max-width: 820px) {
+  .nt-topbar { height: auto; flex-wrap: wrap; padding: 8px 12px; }
+  .nt-input { order: 3; width: 100%; }
+  .nt-input-select.nt-input-select { flex: 1; max-width: none; }
+  .nt-input-hint { top: 116px; flex-direction: column; align-items: flex-start; }
+  .nt-ih-actions { margin-left: 0; flex-direction: row; align-items: center; }
+}
+
+/* Monitoring volume: a fixed-gain passthrough is unusable — too loud on an
+   interface, too quiet on a laptop mic. Hidden until monitoring is on. */
+.nt-input-volume {
+  width: 0;
+  opacity: 0;
+  padding: 0;
+  margin: 0;
+  transition: width .15s ease, opacity .15s ease;
+  accent-color: var(--du-green);
+  cursor: pointer;
+}
+.nt-input-volume.is-on { width: 78px; opacity: 1; }
+
+/* A passing note, not a warning: it explains a symptom the player may never
+   have (a cabled instrument cannot feed back). */
+.nt-input-tip {
+  position: fixed;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 19;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 16px;
+  border: 2px solid var(--du-line);
+  border-radius: 999px;
+  background: var(--du-bg);
+  color: var(--du-muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10);
+}
+.nt-input-tip:hover { color: var(--du-text); }
+
+/* Not measured yet: the button that fixes it should look like the way forward,
+   and the panel should say something is missing. */
+#nt-latency-row:not(.is-calibrated) {
+  border: 2px solid var(--du-yellow);
+  border-radius: 16px;
+  padding: 10px;
+  background: rgba(255, 200, 0, 0.08);
+}
+#nt-latency-row:not(.is-calibrated) #nt-calib-start {
+  background: var(--du-green);
+  border: none;
+  border-bottom: var(--du-edge) solid var(--du-green-dark);
+  color: #fff;
+}
+#nt-latency-row:not(.is-calibrated) #nt-calib-start:hover { filter: brightness(1.06); }
+
+/* ── Results card ────────────────────────────────────────────────────
+   The rhythm report used to open as a wall: six count rows, a verdict, two
+   pieces of advice and a diagnostics panel, all at once. Now it reads in the
+   order a teacher speaks — medal, the numbers that matter, one sentence about
+   how it went, one thing to work on — and the tables fold away underneath. */
+.nt-results-card {
+  width: min(560px, 94vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 28px 26px 24px;
+}
+.nt-results-card h2 { margin: 0 0 6px; font-size: 26px; }
+.nt-medal { font-size: 60px; line-height: 1; margin-bottom: 4px; }
+
+.nt-results-stats {
+  gap: 28px;
+  margin: 18px 0 14px;
+  padding: 16px 0;
+  border-top: 2px solid var(--du-line);
+  border-bottom: 2px solid var(--du-line);
+}
+.nt-results-stats .nt-stat-val { font-size: 28px; }
+
+.nt-results-msg { font-size: 15px; font-weight: 700; color: var(--du-text); line-height: 1.5; }
+
+/* The sentence that actually explains the run. */
+.nt-re-verdict {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 16px;
+  background: var(--du-bg-2);
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--du-text);
+}
+.nt-re-verdict.is-hintish {
+  background: rgba(255, 200, 0, 0.12);
+  border: 2px solid var(--du-yellow);
+}
+
+.nt-re-advice { margin-top: 18px; padding-top: 0; border-top: none; }
+.nt-re-advice-h {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--du-muted);
+  margin-bottom: 10px;
+}
+.nt-re-tip {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border: 2px solid var(--du-line);
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
+  text-align: left;
+}
+.nt-re-tip .i { font-size: 20px; line-height: 1.2; flex: 0 0 auto; }
+
+/* Counts and input report: reference material, one tap away. */
+.nt-re-diag { margin-top: 16px; border-top: 2px solid var(--du-line); padding-top: 14px; }
+.nt-re-diag > summary { font-size: 13px; font-weight: 800; color: var(--du-muted); }
+.nt-re-diag > summary:hover { color: var(--du-text); }
+.nt-re-diag-body { padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.nt-re-row { font-size: 13.5px; font-weight: 600; }
+.nt-re-row span { color: var(--du-muted); }
+.nt-re-row b { font-weight: 800; color: var(--du-text); }
+
+.nt-results-actions { margin-top: 22px; gap: 12px; }
+
+/* base.css frames the whole advice block; the individual tips carry the frame
+   now, so the outer one would double it. */
+.nt-re-advice { border: none; background: none; padding: 0; }
+
+/* The counts section is a disclosure, not a card: the earlier blanket rule
+   framed it like one. */
+.nt-re-diag {
+  border: none;
+  border-top: 2px solid var(--du-line);
+  border-radius: 0;
+}
