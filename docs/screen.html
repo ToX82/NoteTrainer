@@ -19,159 +19,206 @@
     <symbol id="nt-i-rhythm" viewBox="0 0 24 24"><path d="M2 12h3l2.5-7 4 14 3-9 1.5 2H22"/></symbol>
   </svg>
 
-  <!-- ── Header ─────────────────────────────────────────── -->
-  <div class="nt-header">
-    <div class="nt-brand">
-      <div class="nt-brand-mark"><svg class="nt-ic is-fill"><use href="#nt-i-note"/></svg></div>
-      <div>
-        <h1><span data-i18n="app.title">Note Trainer</span><span class="nt-version" id="nt-version"></span></h1>
-        <p class="nt-tagline" data-i18n="app.tagline">Learn the fretboard and train your ear — bite-sized games that listen.</p>
-      </div>
-    </div>
-    <div class="nt-header-right">
-      <div class="nt-global-progress" id="nt-ach-progress" data-i18n-attr="title:header.goals_title" style="display:none;">
-        <svg class="nt-ic is-fill" style="color:var(--nt-hint-edge);"><use href="#nt-i-star"/></svg>
-        <span><b id="nt-ach-count">0</b><span id="nt-ach-total">/12</span> <span data-i18n="header.goals">goals</span></span>
-      </div>
-      <div class="nt-global-progress" id="nt-global-progress" data-i18n-attr="title:header.medals_title">
-        <svg class="nt-ic"><use href="#nt-i-medal"/></svg>
-        <span><b id="nt-medal-count">0</b> <span data-i18n="header.medals">medals</span></span>
-      </div>
-      <button class="nt-btn secondary" id="nt-stop" style="display:none;">
-        <svg class="nt-ic"><use href="#nt-i-exit"/></svg> <span data-i18n="header.exit">Exit</span>
-      </button>
-    </div>
-  </div>
+  <!-- The brand, the progress chips and the Exit button live in the page's top
+       bar (index.html) — screen.js resolves them by id wherever they sit, and
+       the screen itself is left to the practice. -->
 
-  <!-- ── Setup: hub ────────────────────────────────────── -->
-  <div id="nt-setup" class="nt-panel">
-    <div class="nt-section-label" data-i18n="setup.choose_game">Choose a game</div>
-    <div class="nt-game-picker" id="nt-games"></div>
-
-    <!-- Fretboard game panel -->
-    <div class="nt-game-panel" id="nt-panel-fret">
-      <div class="nt-setup-grid" style="margin-top:14px;">
-        <label class="nt-field"><span data-i18n="setup.instrument">Instrument</span><select id="nt-instrument"></select></label>
-        <label class="nt-field"><span data-i18n="setup.tuning">Tuning</span><select id="nt-tuning"></select></label>
-        <label class="nt-field"><span data-i18n="setup.notes">Notes</span>
-          <select id="nt-noteset">
-            <option value="natural" data-i18n="noteset.natural">Naturals (A–G)</option>
-            <option value="sharps" data-i18n="noteset.sharps">With sharps (♯)</option>
-            <option value="flats" data-i18n="noteset.flats">With flats (♭)</option>
-            <option value="chromatic" data-i18n="noteset.chromatic">Chromatic (12 notes)</option>
-          </select>
-        </label>
-        <label class="nt-field"><span data-i18n="setup.mode">Mode</span>
-          <select id="nt-mode">
-            <option value="relax" data-i18n="mode.relax">Relax (no timer)</option>
-            <option value="arcade" data-i18n="mode.arcade">Arcade (timed + combo)</option>
-            <option value="challenge" data-i18n="mode.challenge">Challenge (series + medal)</option>
-            <option value="learn" data-i18n="mode.learn">Learn (explore the fretboard)</option>
-          </select>
-        </label>
-        <label class="nt-field"><span data-i18n="setup.microphone">Microphone</span><select id="nt-mic"></select></label>
-      </div>
-
-      <div id="nt-levels-wrap" style="margin-top:14px;">
-        <div class="nt-section-label">
-          <span data-i18n="fret.levels_title">Practice on the fretboard</span> <span data-i18n="fret.levels_hint">(or configure freely above)</span>
-        </div>
-        <div class="nt-levels" id="nt-levels"></div>
-        <div id="nt-drill" class="nt-drill" style="display:none;"></div>
-      </div>
+  <!-- ── Setup: mode picker + workspace (studies | control deck) ── -->
+  <div id="nt-setup" class="nt-setup">
+    <!-- The three pillars. They carry their own names, so no label above them. -->
+    <div class="nt-mode-selector">
+      <div class="nt-game-picker" id="nt-games" role="group" data-i18n-attr="aria-label:setup.choose_game"></div>
     </div>
 
-    <!-- Ear game panel -->
-    <div class="nt-game-panel" id="nt-panel-ear">
-      <div class="nt-ear-setup" style="margin-top:14px;">
-        <div class="nt-section-label"><span data-i18n="ear.difficulty">Difficulty</span> <span data-i18n="ear.difficulty_hint">(change anytime)</span></div>
-        <div class="nt-ear-diff" id="nt-ear-diff">
-          <button type="button" class="nt-seg" data-tier="easy" data-i18n="ear.tier.easy" data-i18n-attr="title:ear.tier.easy_title" title="3 notes — C E G">Easy</button>
-          <button type="button" class="nt-seg" data-tier="medium" data-i18n="ear.tier.medium" data-i18n-attr="title:ear.tier.medium_title" title="Major scale — 7 notes">Medium</button>
-          <button type="button" class="nt-seg" data-tier="hard" data-i18n="ear.tier.hard" data-i18n-attr="title:ear.tier.hard_title" title="All 12 notes">Hard</button>
-        </div>
-        <div class="nt-section-label" style="margin-top:4px;"><span data-i18n="ear.answer_with">Answer with</span> <span data-i18n="ear.answer_with_hint">(note name or interval)</span></div>
-        <div class="nt-ear-diff" id="nt-ear-mode">
-          <button type="button" class="nt-seg" data-mode="note" data-i18n="ear.answer.note" data-i18n-attr="title:ear.answer.note_title" title="Name the letter of the note you heard">Note</button>
-          <button type="button" class="nt-seg" data-mode="interval" data-i18n="ear.answer.interval" data-i18n-attr="title:ear.answer.interval_title" title="Name the distance from the home note — the real theory skill">Interval</button>
-        </div>
-        <label class="nt-toggle" for="nt-ear-use-home">
-          <input type="checkbox" id="nt-ear-use-home" checked>
-          <span class="nt-toggle-track"><span class="nt-toggle-thumb"></span></span>
-          <span class="nt-toggle-text">
-            <span class="nt-toggle-title" data-i18n="ear.use_home_title">Play C as reference</span>
-            <span class="nt-toggle-desc" data-i18n="ear.use_home_desc">Sound the home note before each mystery note. Turn off for a harder challenge (pure absolute pitch).</span>
-          </span>
-        </label>
-        <p class="nt-ear-intro" id="nt-ear-intro" data-i18n="ear.intro">A reference "home" note plays, then a mystery note — name what you heard from the buttons. Ten rounds per session, with streaks and a final medal.</p>
-        <div class="nt-ear-mastery" id="nt-ear-mastery" style="display:none;"></div>
-      </div>
-    </div>
-
-    <!-- Rhythm game panel -->
-    <div class="nt-game-panel" id="nt-panel-rhythm">
-      <div class="nt-rhythm-setup" style="margin-top:14px;">
-        <div class="nt-section-label"><span data-i18n="rhythm.drill">Drill</span> <span data-i18n="rhythm.drill_hint">(pick one — each one trains a different piece of time)</span></div>
-        <div class="nt-levels nt-rhythm-levels" id="nt-rhythm-levels"></div>
-
-        <div class="nt-rhythm-controls">
-          <div class="nt-ctl">
-            <div class="nt-tempo-head" data-i18n="rhythm.tempo">Tempo</div>
-            <div class="nt-tempo-row">
-              <button type="button" class="nt-tempo-btn" id="nt-bpm-down" data-i18n-attr="aria-label:rhythm.slower" aria-label="Slower">−</button>
-              <div class="nt-tempo-val"><b id="nt-bpm">80</b><span data-i18n="rhythm.bpm">BPM</span></div>
-              <button type="button" class="nt-tempo-btn" id="nt-bpm-up" data-i18n-attr="aria-label:rhythm.faster" aria-label="Faster">+</button>
+    <div class="nt-workspace">
+      <!-- LEFT: studies / mastery for the active game -->
+      <div class="nt-workspace-main nt-panel">
+        <div class="nt-game-panel" id="nt-panel-fret">
+          <div class="nt-panel-header">
+            <div class="nt-panel-title">
+              <h3 data-i18n="fret.levels_title">The map of the neck</h3>
+              <p class="nt-panel-subtitle" data-i18n="fret.levels_hint">Every study opens a part of the neck. The terms are set beside.</p>
             </div>
-            <div class="nt-tempo-note" id="nt-tempo-note"></div>
           </div>
-
-          <div class="nt-ctl">
-            <div class="nt-tempo-head" data-i18n="rhythm.judging">Judging</div>
-            <div class="nt-ear-diff" id="nt-rhythm-strict">
-              <button type="button" class="nt-seg" data-strict="tight" data-i18n="rhythm.strict.tight" data-i18n-attr="title:rhythm.strict.tight_title" title="±15ms for a perfect — the real standard">Tight</button>
-              <button type="button" class="nt-seg" data-strict="precise" data-i18n="rhythm.strict.precise" data-i18n-attr="title:rhythm.strict.precise_title" title="±22ms for a perfect">Precise</button>
-              <button type="button" class="nt-seg" data-strict="easy" data-i18n="rhythm.strict.easy" data-i18n-attr="title:rhythm.strict.easy_title" title="±35ms for a perfect — while you find your feet">Forgiving</button>
-            </div>
-            <div class="nt-tempo-note" id="nt-strict-note"></div>
+          <!-- The instrument the settings beside describe, drawn out. -->
+          <div class="nt-fret-preview" id="nt-fret-preview">
+            <div id="nt-fret-preview-board"></div>
+            <p class="nt-fret-preview-caption" id="nt-fret-preview-caption"></p>
           </div>
-
-          <div class="nt-ctl">
-            <div class="nt-tempo-head" data-i18n="rhythm.detection">Note detection</div>
-            <div class="nt-ear-diff" id="nt-rhythm-sens">
-              <button type="button" class="nt-seg" data-sens="sensitive" data-i18n="rhythm.sens.sensitive" data-i18n-attr="title:rhythm.sens.sensitive_title" title="Hears quiet and closely-spaced notes; may report a few extras">Sensitive</button>
-              <button type="button" class="nt-seg" data-sens="balanced" data-i18n="rhythm.sens.balanced" data-i18n-attr="title:rhythm.sens.balanced_title" title="The default">Balanced</button>
-              <button type="button" class="nt-seg" data-sens="strict" data-i18n="rhythm.sens.strict" data-i18n-attr="title:rhythm.sens.strict_title" title="Ignores ringing tails; may miss softly played notes">Strict</button>
-            </div>
-            <div class="nt-tempo-note" id="nt-sens-note"></div>
-          </div>
-
-          <div class="nt-ctl" id="nt-latency-row">
-            <div class="nt-tempo-head" data-i18n="rhythm.latency">Input latency</div>
-            <div class="nt-lat-row">
-              <div class="nt-tempo-val"><b id="nt-latency-val">80</b><span data-i18n="rhythm.ms">MS</span></div>
-              <button class="nt-btn secondary" id="nt-calib-start" data-i18n="rhythm.calibrate">Calibrate</button>
-            </div>
-            <div class="nt-tempo-note" id="nt-latency-note"></div>
+          <div id="nt-levels-wrap">
+            <div class="nt-levels" id="nt-levels"></div>
+            <div id="nt-drill" class="nt-drill" style="display:none;"></div>
           </div>
         </div>
 
-        <div class="nt-warn" id="nt-rhythm-warn">
-          <svg class="nt-ic"><use href="#nt-i-alert"/></svg>
-          <span data-i18n-html="rhythm.warn_html">
-            <b>Use headphones</b> — a metronome leaking into the microphone is scored as if you had played it. The calibration checks this for you.<br>
-            <b>One attack per note</b> — any pitch, any string. A strum reads as several notes; spare attacks cost you nothing, but they crowd the picture.
-          </span>
+        <div class="nt-game-panel" id="nt-panel-ear">
+          <div class="nt-panel-header">
+            <div class="nt-panel-title">
+              <h3 data-i18n="ear.panel_title">Studies for the ear</h3>
+              <p class="nt-panel-subtitle" data-i18n="ear.panel_subtitle">Analytical listening, without looking at the instrument.</p>
+            </div>
+          </div>
+          <!-- The three tiers are this game's studies: one medal and one best
+               score each, the same as a fretboard level or a rhythm drill. -->
+          <div class="nt-levels nt-ear-levels" id="nt-ear-levels"></div>
+          <p class="nt-ear-intro" id="nt-ear-intro" data-i18n="ear.intro">A reference "home" note plays, then a mystery note — name what you heard from the buttons. Ten rounds per session, with streaks and a final medal.</p>
+          <div class="nt-ear-mastery" id="nt-ear-mastery" style="display:none;"></div>
         </div>
 
-        <p class="nt-ear-intro" id="nt-rhythm-tip"></p>
+        <div class="nt-game-panel" id="nt-panel-rhythm">
+          <div class="nt-panel-header">
+            <div class="nt-panel-title">
+              <h3 data-i18n="rhythm.drill">Studies</h3>
+              <p class="nt-panel-subtitle" data-i18n="rhythm.drill_hint">(each works on a different aspect of time)</p>
+            </div>
+          </div>
+          <div class="nt-levels nt-rhythm-levels" id="nt-rhythm-levels"></div>
+          <p class="nt-ear-intro" id="nt-rhythm-tip"></p>
+          <div class="nt-warn" id="nt-rhythm-warn">
+            <svg class="nt-ic"><use href="#nt-i-alert"/></svg>
+            <span data-i18n-html="rhythm.warn_html">
+              <b>Use headphones</b> — a metronome leaking into the microphone is scored as if you had played it. The calibration checks this for you.<br>
+              <b>One attack per note</b> — any pitch, any string. A strum reads as several notes; spare attacks cost you nothing, but they crowd the picture.
+            </span>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="nt-start-row">
-      <button class="nt-btn" id="nt-start"><svg class="nt-ic is-fill"><use href="#nt-i-play"/></svg> <span id="nt-start-label" data-i18n="start.button">Start</span></button>
-      <span id="nt-setup-hint" class="nt-setup-hint"></span>
+      <!-- RIGHT: settings for the active game + start -->
+      <aside class="nt-control-deck">
+        <div class="nt-deck-card nt-panel">
+          <div class="nt-game-panel" id="nt-deck-fret">
+            <div class="nt-deck-title">
+              <span data-i18n="deck.fret">Neck settings</span>
+              <span class="nt-deck-emoji" aria-hidden="true">🎸</span>
+            </div>
+            <div class="nt-setup-grid nt-deck-grid">
+              <label class="nt-field"><span data-i18n="setup.instrument">Instrument</span><select id="nt-instrument"></select></label>
+              <label class="nt-field"><span data-i18n="setup.tuning">Tuning</span><select id="nt-tuning"></select></label>
+              <label class="nt-field"><span data-i18n="setup.notes">Notes</span>
+                <select id="nt-noteset">
+                  <option value="natural" data-i18n="noteset.natural">Naturals (A–G)</option>
+                  <option value="sharps" data-i18n="noteset.sharps">With sharps (♯)</option>
+                  <option value="flats" data-i18n="noteset.flats">With flats (♭)</option>
+                  <option value="chromatic" data-i18n="noteset.chromatic">Chromatic (12 notes)</option>
+                </select>
+              </label>
+              <label class="nt-field"><span data-i18n="setup.mode">Mode</span>
+                <select id="nt-mode">
+                  <option value="relax" data-i18n="mode.relax">Relax (no timer)</option>
+                  <option value="arcade" data-i18n="mode.arcade">Arcade (timed + combo)</option>
+                  <option value="challenge" data-i18n="mode.challenge">Challenge (series + medal)</option>
+                  <option value="learn" data-i18n="mode.learn">Learn (explore the fretboard)</option>
+                </select>
+              </label>
+              <label class="nt-field nt-deck-mic" hidden><span data-i18n="setup.microphone">Microphone</span><select id="nt-mic"></select></label>
+            </div>
+          </div>
+
+          <div class="nt-game-panel" id="nt-deck-ear">
+            <div class="nt-deck-title">
+              <span data-i18n="deck.ear">Ear settings</span>
+              <span class="nt-deck-emoji" aria-hidden="true">🎧</span>
+            </div>
+            <div class="nt-ear-setup nt-deck-stack">
+              <div class="nt-option-group">
+                <div class="nt-option-label" data-i18n-attr="title:ear.answer_with_hint"><span data-i18n="ear.answer_with">Answer with</span></div>
+                <div class="nt-ear-diff" id="nt-ear-mode">
+                  <button type="button" class="nt-seg" data-mode="note" data-i18n="ear.answer.note" data-i18n-attr="title:ear.answer.note_title" title="Name the letter of the note you heard">Note</button>
+                  <button type="button" class="nt-seg" data-mode="interval" data-i18n="ear.answer.interval" data-i18n-attr="title:ear.answer.interval_title" title="Name the distance from the home note — the real theory skill">Interval</button>
+                </div>
+              </div>
+              <label class="nt-toggle" for="nt-ear-use-home">
+                <input type="checkbox" id="nt-ear-use-home" checked>
+                <span class="nt-toggle-track"><span class="nt-toggle-thumb"></span></span>
+                <span class="nt-toggle-text">
+                  <span class="nt-toggle-title" data-i18n="ear.use_home_title">Play C as reference</span>
+                  <span class="nt-toggle-desc" data-i18n="ear.use_home_desc">Sound the home note before each mystery note. Turn off for a harder challenge (pure absolute pitch).</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="nt-game-panel" id="nt-deck-rhythm">
+            <div class="nt-deck-title">
+              <span data-i18n="deck.rhythm">Time settings</span>
+              <span class="nt-deck-emoji" aria-hidden="true">⏱️</span>
+            </div>
+            <div class="nt-rhythm-controls nt-deck-stack">
+              <div class="nt-ctl nt-bpm-picker">
+                <div class="nt-bpm-display">
+                  <span class="nt-tempo-val"><b id="nt-bpm">80</b><span data-i18n="rhythm.bpm">BPM</span></span>
+                </div>
+                <div class="nt-tempo-row">
+                  <button type="button" class="nt-tempo-btn" id="nt-bpm-down" data-i18n-attr="aria-label:rhythm.slower" aria-label="Slower">−</button>
+                  <input type="range" class="nt-bpm-slider" id="nt-bpm-slider" min="40" max="200" value="80" data-i18n-attr="aria-label:rhythm.tempo">
+                  <button type="button" class="nt-tempo-btn" id="nt-bpm-up" data-i18n-attr="aria-label:rhythm.faster" aria-label="Faster">+</button>
+                </div>
+                <div class="nt-tempo-note" id="nt-tempo-note"></div>
+              </div>
+
+              <div class="nt-option-group">
+                <div class="nt-option-label-row">
+                  <div class="nt-option-label" data-i18n="rhythm.judging">Judging</div>
+                  <button type="button" class="nt-help" data-i18n-attr="aria-label:rhythm.judging_help_label" aria-describedby="nt-judging-help">?</button>
+                  <span id="nt-judging-help" class="nt-help-tip" role="tooltip" data-i18n="rhythm.judging_help">How tight the timing window is around the click.</span>
+                </div>
+                <div class="nt-ear-diff" id="nt-rhythm-strict">
+                  <button type="button" class="nt-seg" data-strict="easy" data-i18n="rhythm.strict.easy" data-i18n-attr="title:rhythm.strict.easy_title" title="±45ms — while you find your feet">Beginner</button>
+                  <button type="button" class="nt-seg" data-strict="precise" data-i18n="rhythm.strict.precise" data-i18n-attr="title:rhythm.strict.precise_title" title="±28ms — the standard">Groover</button>
+                  <button type="button" class="nt-seg" data-strict="tight" data-i18n="rhythm.strict.tight" data-i18n-attr="title:rhythm.strict.tight_title" title="±15ms — the real standard">Surgeon</button>
+                </div>
+                <div class="nt-tempo-note nt-option-hint" id="nt-strict-note"></div>
+              </div>
+
+              <div class="nt-option-group">
+                <div class="nt-option-label-row">
+                  <div class="nt-option-label" data-i18n="rhythm.detection">Note detection</div>
+                  <button type="button" class="nt-help" data-i18n-attr="aria-label:rhythm.detection_help_label" aria-describedby="nt-detection-help">?</button>
+                  <span id="nt-detection-help" class="nt-help-tip" role="tooltip" data-i18n="rhythm.detection_help">How eagerly the app hears attacks from your instrument.</span>
+                </div>
+                <div class="nt-ear-diff" id="nt-rhythm-sens">
+                  <button type="button" class="nt-seg" data-sens="sensitive" data-i18n="rhythm.sens.sensitive" data-i18n-attr="title:rhythm.sens.sensitive_title" title="Hears quiet and closely-spaced notes; may report a few extras">Sensitive</button>
+                  <button type="button" class="nt-seg" data-sens="balanced" data-i18n="rhythm.sens.balanced" data-i18n-attr="title:rhythm.sens.balanced_title" title="The default">Balanced</button>
+                  <button type="button" class="nt-seg" data-sens="strict" data-i18n="rhythm.sens.strict" data-i18n-attr="title:rhythm.sens.strict_title" title="Ignores ringing tails; may miss softly played notes">Strict</button>
+                </div>
+                <div class="nt-tempo-note nt-option-hint" id="nt-sens-note"></div>
+              </div>
+
+              <div class="nt-ctl" id="nt-latency-row">
+                <div class="nt-tempo-head" data-i18n="rhythm.latency">Input latency</div>
+                <div class="nt-lat-row">
+                  <div class="nt-tempo-val"><b id="nt-latency-val">80</b><span data-i18n="rhythm.ms">MS</span></div>
+                  <button class="nt-btn secondary" id="nt-calib-start" data-i18n="rhythm.calibrate">Calibrate</button>
+                </div>
+                <div class="nt-tempo-note" id="nt-latency-note"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="nt-start-row">
+            <button class="nt-btn nt-btn-play" id="nt-start">
+              <span id="nt-start-label" data-i18n="start.button">Start</span>
+              <span class="nt-btn-rocket" aria-hidden="true">🚀</span>
+            </button>
+            <span id="nt-setup-hint" class="nt-setup-hint"></span>
+          </div>
+          <div class="nt-tip-box nt-game-panel" id="nt-tip-fret">
+            <span aria-hidden="true">💡</span>
+            <span data-i18n-html="tip.fret"><strong>Fret tip:</strong> Memorise the reference dots on frets 3, 5 and 7.</span>
+          </div>
+          <div class="nt-tip-box nt-game-panel" id="nt-tip-ear">
+            <span aria-hidden="true">💡</span>
+            <span data-i18n-html="tip.ear"><strong>Ear tip:</strong> Use headphones — bass and intonation are easier to hear.</span>
+          </div>
+          <div class="nt-tip-box nt-game-panel" id="nt-tip-rhythm">
+            <span aria-hidden="true">💡</span>
+            <span data-i18n-html="tip.rhythm"><strong>Rhythm tip:</strong> Focus on the pulse before you play the note.</span>
+          </div>
+          <div id="nt-mic-error"></div>
+        </div>
+      </aside>
     </div>
-    <div id="nt-mic-error"></div>
   </div>
 
   <!-- ── Play: fretboard ──────────────────────────────── -->

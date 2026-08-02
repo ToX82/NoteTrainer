@@ -45,8 +45,8 @@
         rhythmView: null,          // canvas highway renderer
         rhythmLevels: [],
         rhythmLevelId: null,
-        rhythmStrictness: 'tight',
-        rhythmSensitivity: 'balanced',
+        rhythmStrictness: 'precise',
+        rhythmSensitivity: 'sensitive',
         rhythmStrengths: [], rhythmGhosts: 0, rhythmRecovered: 0, rhythmProbeIdx: 0,
         rhythmLatency: 80,         // ms subtracted from every detected attack
         rhythmCalibrated: false,
@@ -244,11 +244,33 @@
         saveProgress({ levelStrings: S.levelStrings });
     }
 
+    // A picture of the instrument the settings beside it describe: the board,
+    // its inlays, and the note each open string sounds. It answers "did the
+    // tuning I just picked do what I meant" without starting a session.
+    let fretPreview = null;
+    function renderFretPreview() {
+        const box = S.ui.$('nt-fret-preview');
+        if (!box) return;
+        const openMidi = currentOpenMidi();
+        if (!openMidi.length) { box.style.display = 'none'; return; }
+        box.style.display = '';
+        if (!fretPreview) fretPreview = window._noteTrainerFretboard(S.ui.$('nt-fret-preview-board'));
+        fretPreview.render({ openMidi, maxFret: (S.config && S.config.maxFret) || 12 });
+        const caption = S.ui.$('nt-fret-preview-caption');
+        if (caption) {
+            caption.textContent = T('fret.preview_caption', {
+                tuning: S.ui.$('nt-tuning').value,
+                strings: openMidi.map(shortStringName).join(' '),
+            });
+        }
+    }
+
     function renderLevels() {
         const wrap = S.ui.$('nt-levels');
         wrap.innerHTML = '';
         const openMidi = currentOpenMidi();
         const stringCount = openMidi.length || 6;
+        renderFretPreview();
 
         const fret = S.gameKind === 'fret';
         const free = document.createElement('button');
@@ -283,6 +305,9 @@
         S.levels.forEach(lv => {
             const card = document.createElement('button');
             card.className = 'nt-level-card' + (fret && S.currentLevelId === lv.id ? ' active' : '');
+            // The card shows the first two lines; the chips below repeat the
+            // same notes, and the tooltip carries the description in full.
+            card.title = T('levels.' + lv.id + '.desc', null, lv.desc);
 
             const medal = S.config.medals[lv.id];
             const best = S.config.bestScores[String(lv.id)];
@@ -452,31 +477,36 @@
     // The game picker — a row of game cards (Fretboard Trainer, Ear Training,
     // …future). Selecting one swaps the accent and the setup panel below. This
     // is the hub every new minigame plugs into: add a card + a panel.
-    const MEDAL_ORDER = { bronze: 1, silver: 2, gold: 3 };
-    function bestMedalAcross(keys) {
-        let medal = null;
-        keys.forEach(k => {
-            const m = S.config.medals[k];
-            if (m && (!medal || MEDAL_ORDER[m] > MEDAL_ORDER[medal])) medal = m;
-        });
-        return medal;
-    }
-    function bestScoreAcross(keys) {
-        let best = null;
-        keys.forEach(k => {
-            const b = S.config.bestScores[String(k)];
-            if (b != null && (best == null || b > best)) best = b;
-        });
-        return best;
+
+    // How much of a game is behind the player: the share of its studies that
+    // have been medalled. A number is more use on a card than "not played yet",
+    // and it is the same currency the header counts.
+    function masteryPct(keys) {
+        if (!keys.length) return 0;
+        const done = keys.filter(k => S.config.medals[k]).length;
+        return Math.round((done / keys.length) * 100);
     }
 
-    function footHtml(best, medal) {
-        if (best == null && !medal) return '<span class="nt-gc-empty">' + T('game.not_played') + '</span>';
-        let s = '';
-        if (medal) s += '<span class="nt-gc-best">' + MEDAL_EMOJI[medal] + '</span>';
-        if (best != null) s += '<span class="nt-gc-best"><svg class="nt-ic is-fill"><use href="#nt-i-star"/></svg> '
-            + T('game.best', { score: best }) + '</span>';
-        return s;
+    // The picker is three equal cards, so what each one says has to fit on one
+    // line; the long description stays as the card's tooltip.
+    // i18n-used: game.rhythm.title, game.fret.title, game.ear.title
+    // i18n-used: game.rhythm.tag, game.fret.tag, game.ear.tag
+    // i18n-used: game.rhythm.desc, game.fret.desc, game.ear.desc
+    function gameCard(kind, emoji, keys, onClick) {
+        const card = document.createElement('button');
+        card.className = 'nt-game-card' + (S.gameKind === kind ? ' active' : '');
+        card.setAttribute('data-accent', kind);
+        card.title = T('game.' + kind + '.desc');
+        card.innerHTML =
+            '<span class="nt-gc-icon" aria-hidden="true">' + emoji + '</span>'
+            + '<span class="nt-gc-body">'
+            + '<span class="nt-gc-title">' + T('game.' + kind + '.title') + '</span>'
+            + '<span class="nt-gc-tag">' + T('game.' + kind + '.tag') + '</span>'
+            + '</span>'
+            + '<span class="nt-gc-mastery" title="' + T('game.mastery_title') + '">'
+            + masteryPct(keys) + '%</span>';
+        card.addEventListener('click', onClick);
+        return card;
     }
 
     function renderGames() {
@@ -484,47 +514,15 @@
         if (!wrap) return;
         wrap.innerHTML = '';
 
-        const fretKeys = S.levels.map(l => l.id).concat(['free']);
-        const fretCard = document.createElement('button');
-        fretCard.className = 'nt-game-card' + (S.gameKind === 'fret' ? ' active' : '');
-        fretCard.setAttribute('data-accent', 'fret');
-        fretCard.innerHTML =
-            '<span class="nt-gc-head">'
-            + '<span class="nt-gc-icon"><svg class="nt-ic"><use href="#nt-i-fret"/></svg></span>'
-            + '<span class="nt-gc-title">' + T('game.fret.title') + '</span>'
-            + '</span>'
-            + '<span class="nt-gc-desc">' + T('game.fret.desc') + '</span>'
-            + '<div class="nt-gc-foot">' + footHtml(bestScoreAcross(fretKeys), bestMedalAcross(fretKeys)) + '</div>';
-        fretCard.addEventListener('click', selectFretGame);
-        wrap.appendChild(fretCard);
-
-        const earKeys = ['easy', 'medium', 'hard'].map(t => 'ear:' + t);
-        const earCard = document.createElement('button');
-        earCard.className = 'nt-game-card' + (S.gameKind === 'ear' ? ' active' : '');
-        earCard.setAttribute('data-accent', 'ear');
-        earCard.innerHTML =
-            '<span class="nt-gc-head">'
-            + '<span class="nt-gc-icon"><svg class="nt-ic"><use href="#nt-i-sound"/></svg></span>'
-            + '<span class="nt-gc-title">' + T('game.ear.title') + '</span>'
-            + '</span>'
-            + '<span class="nt-gc-desc">' + T('game.ear.desc') + '</span>'
-            + '<div class="nt-gc-foot">' + footHtml(bestScoreAcross(earKeys), bestMedalAcross(earKeys)) + '</div>';
-        earCard.addEventListener('click', selectEar);
-        wrap.appendChild(earCard);
-
+        // Order matches the studio pillars: Time → Neck → Ear.
+        // Emoji icons match the Musician Studio mockup (tempo / manico / orecchio).
         const rhythmKeys = S.rhythmLevels.map(l => 'rhythm:' + l.id);
-        const rhythmCard = document.createElement('button');
-        rhythmCard.className = 'nt-game-card' + (S.gameKind === 'rhythm' ? ' active' : '');
-        rhythmCard.setAttribute('data-accent', 'rhythm');
-        rhythmCard.innerHTML =
-            '<span class="nt-gc-head">'
-            + '<span class="nt-gc-icon"><svg class="nt-ic"><use href="#nt-i-rhythm"/></svg></span>'
-            + '<span class="nt-gc-title">' + T('game.rhythm.title') + '</span>'
-            + '</span>'
-            + '<span class="nt-gc-desc">' + T('game.rhythm.desc') + '</span>'
-            + '<div class="nt-gc-foot">' + footHtml(bestScoreAcross(rhythmKeys), bestMedalAcross(rhythmKeys)) + '</div>';
-        rhythmCard.addEventListener('click', selectRhythm);
-        wrap.appendChild(rhythmCard);
+        const fretKeys = S.levels.map(l => l.id);
+        const earKeys = ['easy', 'medium', 'hard'].map(t => 'ear:' + t);
+
+        wrap.appendChild(gameCard('rhythm', '⏱️', rhythmKeys, selectRhythm));
+        wrap.appendChild(gameCard('fret', '🎸', fretKeys, selectFretGame));
+        wrap.appendChild(gameCard('ear', '🎧', earKeys, selectEar));
     }
 
     // Total medals earned across every game — shown in the header as identity.
@@ -843,11 +841,39 @@
     }
 
     // ── Ear training ──────────────────────────────────────────────────
-    // The difficulty segmented control lives inside the minigame.
+    // The three tiers are this game's studies — each keeps its own medal and
+    // best score — so they sit in the panel as cards, next to the fretboard
+    // levels and the rhythm drills, rather than as a switch in the deck.
+    // i18n-used: ear.tier.easy, ear.tier.medium, ear.tier.hard
+    // i18n-used: ear.tier.easy_title, ear.tier.medium_title, ear.tier.hard_title
+    const EAR_TIER_IDS = ['easy', 'medium', 'hard'];
     function renderEarDiff() {
-        S.ui.$('nt-ear-diff').querySelectorAll('.nt-seg').forEach(b => {
-            b.classList.toggle('active', b.getAttribute('data-tier') === S.earTier);
-        });
+        const wrap = S.ui.$('nt-ear-levels');
+        if (wrap) {
+            const TIERS = window._noteTrainerEar && window._noteTrainerEar.TIERS;
+            wrap.innerHTML = '';
+            EAR_TIER_IDS.forEach((tier, i) => {
+                const key = 'ear:' + tier;
+                const medal = S.config.medals[key];
+                const best = S.config.bestScores[key];
+                const notes = ((TIERS && TIERS[tier]) || {}).offsets || [];
+                const card = document.createElement('button');
+                card.className = 'nt-level-card' + (S.earTier === tier ? ' active' : '');
+                card.innerHTML =
+                    (medal ? '<span class="nt-lc-medal">' + MEDAL_EMOJI[medal] + '</span>' : '')
+                    + '<span class="nt-lc-num">' + (i + 1) + '</span>'
+                    + '<span class="nt-lc-title">' + T('ear.tier.' + tier) + '</span>'
+                    + '<span class="nt-lc-desc">' + T('ear.tier.' + tier + '_title') + '</span>'
+                    + '<div class="nt-lc-foot">'
+                    +   '<span class="nt-lc-meta">' + T('ear.tier_notes', { count: notes.length }) + '</span>'
+                    + (best != null
+                        ? '<span class="nt-lc-best"><svg class="nt-ic is-fill"><use href="#nt-i-star"/></svg> ' + best + '</span>'
+                        : '<span class="nt-lc-best is-empty">' + T('game.not_played') + '</span>')
+                    + '</div>';
+                card.addEventListener('click', () => setEarTier(tier));
+                wrap.appendChild(card);
+            });
+        }
         renderEarMastery();
     }
 
@@ -1283,16 +1309,15 @@
             // are spelled out under the grid instead.
             card.innerHTML =
                 (medal ? '<span class="nt-lc-medal">' + MEDAL_EMOJI[medal] + '</span>' : '')
-                + '<span class="nt-lc-title"><span class="nt-lc-num">' + lv.id + '</span>'
+                + '<span class="nt-lc-num">' + lv.id + '</span>'
+                + '<span class="nt-lc-title">'
                 + T('rhythm.levels.' + lv.id + '.label', null, lv.label) + '</span>'
-                + '<div class="nt-lc-notes">'
-                +   '<span class="nt-lc-chip">' + T('rhythm.bpm_value', { n: bpm }) + '</span>'
-                +   '<span class="nt-lc-chip">' + clickShort(lv.click) + '</span>'
-                + '</div>'
                 + '<div class="nt-lc-foot">'
+                +   '<span class="nt-lc-meta">' + T('rhythm.bpm_value', { n: bpm })
+                +     ' · ' + clickShort(lv.click) + '</span>'
                 + (best != null
                     ? '<span class="nt-lc-best"><svg class="nt-ic is-fill"><use href="#nt-i-star"/></svg> ' + best + '</span>'
-                    : '<span class="nt-lc-best">' + T('game.not_played') + '</span>')
+                    : '<span class="nt-lc-best is-empty">' + T('game.not_played') + '</span>')
                 + '</div>';
             card.addEventListener('click', () => {
                 S.rhythmLevelId = lv.id;
@@ -1307,15 +1332,23 @@
 
     function renderRhythmControls() {
         const lv = currentRhythmLevel();
+        const bpm = lv ? rhythmBpmFor(lv) : 80;
+        const cap = lv ? maxBpmFor(lv) : 200;
         const bpmEl = S.ui.$('nt-bpm');
-        if (bpmEl) bpmEl.textContent = String(rhythmBpmFor(lv));
+        if (bpmEl) bpmEl.textContent = String(bpm);
+
+        const slider = S.ui.$('nt-bpm-slider');
+        if (slider) {
+            slider.min = '40';
+            slider.max = String(cap);
+            slider.value = String(bpm);
+            slider.disabled = !lv;
+        }
 
         const note = S.ui.$('nt-tempo-note');
         if (note) {
             if (!lv) note.textContent = T('rhythm.pick_for_tempo');
             else {
-                const bpm = rhythmBpmFor(lv);
-                const cap = maxBpmFor(lv);
                 note.innerHTML = bpm >= cap
                     ? T('rhythm.tempo_ceiling', { cap })
                     : bpm > lv.bpm
@@ -2459,7 +2492,7 @@
             bestScores: {}, medals: {}, levelStrings: {}, stats: {}, earStats: {},
             achievements: [], lifetime: { correct: 0, wrong: 0, sessions: 0 },
             maxFret: 12, lastEarTier: 'easy', earMode: 'note', earUseHome: true,
-            lastGame: 'fret', rhythmStrictness: 'tight', rhythmSensitivity: 'balanced',
+            lastGame: 'fret', rhythmStrictness: 'precise', rhythmSensitivity: 'sensitive',
             rhythmLatencyMs: null,
             rhythmBpm: {}, rhythmStats: {}, lastRhythmLevel: null,
         }, cfg);
@@ -2477,7 +2510,7 @@
         await loadData();
 
         const verEl = S.ui.$('nt-version');
-        if (verEl) verEl.textContent = ' v0.2.0';
+        if (verEl) verEl.textContent = 'v0.2.0';
 
         populateInstruments();
         await populateMics();
@@ -2519,10 +2552,7 @@
         S.ui.$('nt-res-close').addEventListener('click', () => { S.ui.hideResults(); stop(); });
         S.ui.$('nt-res-again').addEventListener('click', () => { S.ui.hideResults(); start(); });
 
-        // Ear-training controls.
-        S.ui.$('nt-ear-diff').querySelectorAll('.nt-seg').forEach(b => {
-            b.addEventListener('click', () => setEarTier(b.getAttribute('data-tier')));
-        });
+        // Ear-training controls. The tier cards bind as they are built.
         S.ui.$('nt-ear-mode').querySelectorAll('.nt-seg').forEach(b => {
             b.addEventListener('click', () => setEarMode(b.getAttribute('data-mode')));
         });
@@ -2543,6 +2573,13 @@
             const lv = currentRhythmLevel();
             if (lv) setRhythmBpm(lv, rhythmBpmFor(lv) + 4);
         });
+        const bpmSlider = S.ui.$('nt-bpm-slider');
+        if (bpmSlider) {
+            bpmSlider.addEventListener('input', () => {
+                const lv = currentRhythmLevel();
+                if (lv) setRhythmBpm(lv, Number(bpmSlider.value));
+            });
+        }
         S.ui.$('nt-rhythm-strict').querySelectorAll('.nt-seg').forEach(b => {
             b.addEventListener('click', () => setRhythmStrictness(b.getAttribute('data-strict')));
         });

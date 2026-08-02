@@ -30,7 +30,7 @@ BASE_LOCALE = "en"
 # app/i18n.js is deliberately absent: the only keys in it are usage examples in
 # its own doc comment.
 SOURCES = ["screen.html", "screen.js", "settings-panel.html", "settings.html",
-           "index.html", "app/boot.js", "app/input.js"] + \
+           "index.html", "app/boot.js", "app/input.js", "app/theme.js"] + \
           [str(p.relative_to(DOCS)) for p in sorted((DOCS / "utils").glob("*.js"))]
 
 

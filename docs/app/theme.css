@@ -1,324 +1,1153 @@
 /* ═══════════════════════════════════════════════════════════════════
-   Note Trainer — playful theme.
-   A game-app skin over app/base.css: bright single-hue palette, rounded
-   type, chunky "pressable" buttons with a solid bottom edge, generous radii.
-   Only paint and shape are set here — every layout rule still comes from
-   base.css, so the plugin's structure stays the single source of geometry.
+   Note Trainer — Musician Studio theme.
+   Paint and shape over app/base.css. Section accents follow the active
+   game: Tempo (rhythm), Manico (fret), Orecchio (ear).
    ═══════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Palette */
-  --du-green: #58cc02;
-  --du-green-dark: #48a802;
-  --du-green-soft: #e9ffd6;
-  --du-blue: #1cb0f6;
-  --du-blue-dark: #1899d6;
-  --du-red: #ff4b4b;
-  --du-red-dark: #e02f2f;
-  --du-red-soft: #ffe3e3;
-  --du-yellow: #ffc800;
-  --du-yellow-dark: #e0a500;
-  --du-purple: #ce82ff;
+  /* Surfaces */
+  --ms-bg: #F4F6F9;
+  --ms-bg-header: #FFFFFF;
+  --ms-card: #FFFFFF;
+  --ms-card-subtle: #F8FAFC;
+  --ms-line: #E2E8F0;
+  --ms-line-2: #CBD5E1;
 
-  /* Neutrals */
-  --du-bg: #ffffff;
-  --du-bg-2: #f7f7f7;
-  --du-bg-3: #efefef;
-  --du-line: #e5e5e5;
-  --du-line-2: #d4d4d4;
-  --du-text: #3c3c3c;
-  --du-muted: #777777;
-  --du-faint: #afafaf;
+  /* Text */
+  --ms-text: #0F172A;
+  --ms-muted: #64748B;
+  --ms-faint: #94A3B8;
 
-  /* The pressable edge under every button and card */
-  --du-edge: 4px;
+  /* Tempo = Electric Coral */
+  --ms-tempo: #E53935;
+  --ms-tempo-dark: #C62828;
+  --ms-tempo-light: #FFEBEE;
 
-  --du-font: ui-rounded, "SF Pro Rounded", "Varela Round", "Nunito",
-             "Segoe UI", system-ui, -apple-system, sans-serif;
+  /* Manico = Deep Cyan / Teal */
+  --ms-manico: #00ACC1;
+  --ms-manico-dark: #00838F;
+  --ms-manico-light: #E0F7FA;
+
+  /* Orecchio = Deep Violet */
+  --ms-orecchio: #8E24AA;
+  --ms-orecchio-dark: #6A1B9A;
+  --ms-orecchio-light: #F3E5F5;
+
+  /* Semantic */
+  --ms-ok: #10B981;
+  --ms-ok-dark: #059669;
+  --ms-ok-soft: #D1FAE5;
+  --ms-err: #EF4444;
+  --ms-err-dark: #DC2626;
+  --ms-err-soft: #FEE2E2;
+  --ms-gold: #D97706;
+  --ms-gold-soft: #FEF3C7;
+
+  /* Active section accent (overridden per game mode) */
+  --ms-accent: var(--ms-manico);
+  --ms-accent-dark: var(--ms-manico-dark);
+  --ms-accent-soft: var(--ms-manico-light);
+
+  --ms-edge: 4px;
+  --ms-r-sm: 10px;
+  --ms-r-md: 14px;
+  --ms-r-lg: 20px;
+
+  --ms-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --ms-shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.06);
+
+  --ms-segment: #E2E8F0;
+  --ms-segment-active: #FFFFFF;
+  --ms-fretboard: #1E293B;
+
+  --ms-font: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --ms-display: "Fredoka", "Plus Jakarta Sans", ui-rounded, sans-serif;
+
+  /* Page chrome tokens (consumed by page.css) */
+  --nt-page-bg: var(--ms-bg);
+  --nt-page-text: var(--ms-text);
+  --nt-page-muted: var(--ms-muted);
+  --nt-page-line: var(--ms-line);
+  --nt-page-accent: var(--ms-accent);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --du-bg: #131f24;
-    --du-bg-2: #1b2b31;
-    --du-bg-3: #22353c;
-    --du-line: #2c4048;
-    --du-line-2: #3a545e;
-    --du-text: #f1f7fb;
-    --du-muted: #9fb3bc;
-    --du-faint: #6f8a95;
-    --du-green-soft: #1f3d17;
-    --du-red-soft: #40201f;
-  }
+/* Dark palette. app/theme.js stamps the attribute on <html> from the document
+   head, before the first paint — the stored choice, or the OS preference while
+   the player has not made one. */
+:root[data-theme="dark"] {
+  --ms-bg: #0F172A;
+  --ms-bg-header: #0B1120;
+  --ms-card: #1E293B;
+  --ms-card-subtle: #182234;
+  --ms-line: #334155;
+  --ms-line-2: #475569;
+
+  --ms-text: #F8FAFC;
+  --ms-muted: #94A3B8;
+  --ms-faint: #64748B;
+
+  --ms-tempo: #FF5252;
+  --ms-tempo-dark: #D32F2F;
+  --ms-tempo-light: rgba(255, 82, 82, 0.15);
+
+  --ms-manico: #00E5FF;
+  --ms-manico-dark: #00B8D4;
+  --ms-manico-light: rgba(0, 229, 255, 0.15);
+
+  --ms-orecchio: #B388FF;
+  --ms-orecchio-dark: #7C4DFF;
+  --ms-orecchio-light: rgba(179, 136, 255, 0.15);
+
+  --ms-ok: #34D399;
+  --ms-ok-dark: #10B981;
+  --ms-ok-soft: rgba(16, 185, 129, 0.18);
+  --ms-err: #F87171;
+  --ms-err-dark: #EF4444;
+  --ms-err-soft: rgba(239, 68, 68, 0.18);
+  --ms-gold: #FFD700;
+  --ms-gold-soft: rgba(217, 119, 6, 0.2);
+
+  --ms-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --ms-shadow-subtle: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+  --ms-segment: #0F172A;
+  --ms-segment-active: #1E293B;
+  --ms-fretboard: #0B1120;
 }
 
 /* ── Page shell ──────────────────────────────────────────────────── */
 html, body {
-  background: var(--du-bg);
-  color: var(--du-text);
-  font-family: var(--du-font);
+  height: 100%;
+  overflow: hidden;
+  background: var(--ms-bg);
+  color: var(--ms-text);
+  font-family: var(--ms-font);
+}
+body.nt-page-settings {
+  overflow: auto;
 }
 
+/* Three groups: identity, what the app is listening to, where the player is
+   up to. The middle one is the one a plugged-in guitarist checks first. */
 .nt-topbar {
-  height: 60px;
-  background: var(--du-bg);
-  border-bottom: 2px solid var(--du-line);
+  height: 72px;
+  background: var(--ms-bg-header);
+  border-bottom: 2px solid var(--ms-line);
   backdrop-filter: none;
-  gap: 14px;
+  gap: 16px;
+  padding: 0 24px;
+  justify-content: space-between;
 }
 
-.nt-topbar-title {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  color: var(--du-green);
+.nt-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  flex: none;
 }
 
-.nt-topbar-link {
-  color: var(--du-muted);
-  font-weight: 800;
-  font-size: 13px;
+.nt-topbar-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--ms-tempo), var(--ms-orecchio-dark));
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.nt-topbar-mark svg { width: 24px; height: 24px; }
+
+.nt-topbar-name { display: block; line-height: 1; }
+.nt-topbar-name b {
+  display: block;
+  font-family: var(--ms-display);
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--ms-text);
+}
+
+.nt-topbar-edition {
+  display: inline-flex;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--ms-manico-light);
+  color: var(--ms-manico);
+  font-size: 10.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.5px;
 }
-.nt-topbar-link:hover, .nt-topbar-link:focus-visible { color: var(--du-green); }
+.nt-topbar-edition :empty { display: none; }
 
-.nt-lang { margin-left: auto; }
-.nt-lang-select {
-  min-height: 34px;
-  padding: 0 10px;
+.nt-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.nt-topbar-exit.nt-topbar-exit {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
   border-radius: 12px;
-  border: 2px solid var(--du-line);
-  background: var(--du-bg);
-  color: var(--du-muted);
+}
+
+/* Icon-only chrome buttons (settings, and anything else that joins them). */
+.nt-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--ms-line);
+  background: var(--ms-card-subtle);
+  color: var(--ms-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  cursor: pointer;
+  flex: none;
+}
+.nt-icon-btn:hover,
+.nt-icon-btn:focus-visible { border-color: var(--ms-line-2); color: var(--ms-text); }
+.nt-icon-btn .nt-ic { width: 19px; height: 19px; }
+
+.nt-theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--ms-line);
+  background: var(--ms-card-subtle);
+  color: var(--ms-text);
   font: inherit;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
-.nt-lang-select:hover { border-color: var(--du-line-2); }
-.nt-lang + .nt-topbar-link { margin-left: 0; }
+.nt-theme-toggle:hover,
+.nt-theme-toggle:focus-visible { border-color: var(--ms-line-2); }
 
-.nt-boot { color: var(--du-muted); font-weight: 600; }
-.nt-boot h1 { color: var(--du-text); font-weight: 800; }
-.nt-back { color: var(--du-muted); font-weight: 800; text-transform: uppercase; font-size: 12px; letter-spacing: 0.04em; }
-.nt-back:hover, .nt-back:focus-visible { color: var(--du-green); }
+.nt-lang-select {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--ms-line);
+  background: var(--ms-card-subtle);
+  color: var(--ms-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.nt-lang-select:hover { border-color: var(--ms-line-2); color: var(--ms-text); }
 
-/* ── Token remap: everything base.css paints with ────────────────── */
-.note-trainer-root {
-  color-scheme: light;
-  --nt-font: var(--du-font);
+/* Narrow: the brand keeps its mark, the wording steps aside. */
+@media (max-width: 900px) {
+  .nt-topbar { padding: 0 14px; gap: 10px; }
+  .nt-topbar-name { display: none; }
+  .nt-topbar-right { gap: 6px; }
+  .nt-theme-label { display: none; }
+  .nt-theme-toggle { padding: 0 11px; }
+}
 
-  --nt-bg-0: var(--du-bg); --nt-bg-1: var(--du-bg);
-  --nt-surface-1: var(--du-bg); --nt-surface-2: var(--du-bg-2); --nt-surface-3: var(--du-bg-3);
-  --nt-inset: var(--du-bg-2); --nt-inset-deep: var(--du-line);
-
-  --nt-line-1: var(--du-line); --nt-line-2: var(--du-line-2);
-
-  --nt-text: var(--du-text); --nt-dim: var(--du-text);
-  --nt-muted: var(--du-muted); --nt-faint: var(--du-faint);
-
-  --nt-accent: var(--du-green); --nt-accent-edge: var(--du-green);
-  --nt-accent-deep: var(--du-green-dark); --nt-accent-soft: var(--du-green-soft);
-
-  --nt-ok: var(--du-green); --nt-ok-edge: var(--du-green-dark);
-  --nt-err: var(--du-red); --nt-err-edge: var(--du-red-dark);
-  --nt-hint: var(--du-yellow-dark); --nt-hint-edge: var(--du-yellow-dark);
-
-  --nt-r-sm: 12px; --nt-r-md: 16px; --nt-r-lg: 16px;
-  --nt-shadow-1: none;
-  --nt-ring: 0 0 0 4px rgba(88, 204, 2, 0.35);
-
-  background: var(--du-bg);
-  padding-top: 76px;
+.nt-boot { color: var(--ms-muted); font-weight: 600; }
+.nt-boot h1 {
+  font-family: var(--ms-display);
+  color: var(--ms-text);
   font-weight: 600;
 }
+.nt-back {
+  color: var(--ms-muted);
+  font-weight: 700;
+  font-size: 13px;
+}
+.nt-back:hover, .nt-back:focus-visible { color: var(--ms-accent); }
 
-@media (prefers-color-scheme: dark) {
-  .note-trainer-root { color-scheme: dark; }
+/* ── Token remap into base.css variables ─────────────────────────── */
+.note-trainer-root {
+  color-scheme: light;
+  --nt-font: var(--ms-font);
+  --nt-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --nt-bg-0: var(--ms-bg); --nt-bg-1: var(--ms-bg);
+  --nt-surface-1: var(--ms-card); --nt-surface-2: var(--ms-card-subtle); --nt-surface-3: var(--ms-segment);
+  --nt-inset: var(--ms-card-subtle); --nt-inset-deep: var(--ms-segment);
+
+  --nt-line-1: var(--ms-line); --nt-line-2: var(--ms-line-2);
+
+  --nt-text: var(--ms-text); --nt-dim: var(--ms-text);
+  --nt-muted: var(--ms-muted); --nt-faint: var(--ms-faint);
+
+  --nt-accent: var(--ms-accent);
+  --nt-accent-edge: var(--ms-accent);
+  --nt-accent-deep: var(--ms-accent-dark);
+  --nt-accent-soft: var(--ms-accent-soft);
+
+  --nt-ok: var(--ms-ok); --nt-ok-edge: var(--ms-ok-dark);
+  --nt-err: var(--ms-err); --nt-err-edge: var(--ms-err-dark);
+  --nt-hint: var(--ms-gold); --nt-hint-edge: var(--ms-gold);
+
+  --nt-r-sm: var(--ms-r-sm); --nt-r-md: var(--ms-r-md); --nt-r-lg: var(--ms-r-lg);
+  --nt-shadow-1: var(--ms-shadow-card);
+  --nt-ring: 0 0 0 4px color-mix(in srgb, var(--ms-accent) 30%, transparent);
+
+  background: var(--ms-bg);
+  /* Same content width as the Musician Studio mockup. */
+  max-width: 1140px;
+  width: 92%;
+  margin: 0 auto;
+  padding: 100px 0 28px;
+  font-weight: 500;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
+.note-trainer-root.is-playing,
+.note-trainer-root.is-ear,
+.note-trainer-root.is-rhythm {
+  overflow-y: auto;
+}
+
+/* Section accent follows the selected game */
+.note-trainer-root.is-game-rhythm {
+  --ms-accent: var(--ms-tempo);
+  --ms-accent-dark: var(--ms-tempo-dark);
+  --ms-accent-soft: var(--ms-tempo-light);
+}
+.note-trainer-root.is-game-fret {
+  --ms-accent: var(--ms-manico);
+  --ms-accent-dark: var(--ms-manico-dark);
+  --ms-accent-soft: var(--ms-manico-light);
+}
+.note-trainer-root.is-game-ear {
+  --ms-accent: var(--ms-orecchio);
+  --ms-accent-dark: var(--ms-orecchio-dark);
+  --ms-accent-soft: var(--ms-orecchio-light);
+}
+
+:root[data-theme="dark"] .note-trainer-root { color-scheme: dark; }
+
 /* ── Type ────────────────────────────────────────────────────────── */
-.note-trainer-root h1 { font-weight: 800; letter-spacing: -0.01em; }
-.note-trainer-root h2 { font-weight: 800; }
-.nt-tagline { color: var(--du-muted); font-weight: 600; }
+.note-trainer-root h1 {
+  font-family: var(--ms-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.note-trainer-root h2 {
+  font-family: var(--ms-display);
+  font-weight: 600;
+}
 
 .nt-section-label {
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  color: var(--du-muted);
+  letter-spacing: 0.08px;
+  text-transform: uppercase;
+  color: var(--ms-faint);
 }
-.nt-section-label span { font-weight: 600; color: var(--du-faint); }
+.nt-section-label span { font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ms-muted); }
 
-.nt-brand-mark {
-  background: var(--du-green);
-  border-color: var(--du-green);
-  color: #fff;
+.nt-global-progress {
+  background: var(--ms-card-subtle);
+  border: 1px solid var(--ms-line);
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 6px 14px;
 }
+.nt-global-progress b { color: var(--ms-gold); }
 
-/* ── Buttons: solid bottom edge, pressed on :active ──────────────── */
+/* ── Buttons ─────────────────────────────────────────────────────── */
 .nt-btn {
   border: none;
-  border-bottom: var(--du-edge) solid var(--du-green-dark);
+  border-bottom: var(--ms-edge) solid var(--ms-accent-dark);
   border-radius: 16px;
-  background: var(--du-green);
+  background: var(--ms-accent);
   color: #fff;
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  min-height: 46px;
+  font-family: var(--ms-display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  min-height: 48px;
   padding: 0 22px;
-  transition: filter .1s ease, transform .05s ease, border-bottom-width .05s ease;
+  box-shadow: 0 4px 15px color-mix(in srgb, var(--ms-accent) 28%, transparent);
+  transition: filter .1s ease, transform .05s ease, border-bottom-width .05s ease, box-shadow .1s ease;
 }
-.nt-btn:hover { filter: brightness(1.06); }
+.nt-btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
 .nt-btn:active {
   transform: translateY(2px);
   border-bottom-width: 2px;
+  box-shadow: none;
   filter: brightness(0.98);
 }
 
 .nt-btn.secondary {
-  background: var(--du-bg);
-  border: 2px solid var(--du-line);
-  border-bottom: var(--du-edge) solid var(--du-line);
-  color: var(--du-muted);
+  background: var(--ms-card);
+  border: 2px solid var(--ms-line);
+  border-bottom: var(--ms-edge) solid var(--ms-line-2);
+  color: var(--ms-muted);
+  font-family: var(--ms-font);
+  font-weight: 700;
+  box-shadow: none;
 }
-.nt-btn.secondary:hover { background: var(--du-bg-2); color: var(--du-text); }
-.nt-btn.secondary:active { border-bottom-width: 2px; }
+.nt-btn.secondary:hover {
+  background: var(--ms-card-subtle);
+  color: var(--ms-text);
+  border-color: var(--ms-muted);
+  filter: none;
+  transform: none;
+}
+.nt-btn.secondary:active { border-bottom-width: 2px; transform: translateY(2px); }
 
 .nt-tempo-btn {
-  border-radius: 14px;
-  border: 2px solid var(--du-line);
-  border-bottom: var(--du-edge) solid var(--du-line);
-  background: var(--du-bg);
-  color: var(--du-muted);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--ms-line);
+  border-bottom: 3px solid rgba(0, 0, 0, 0.15);
+  background: var(--ms-card);
+  color: var(--ms-text);
   font-weight: 800;
+  font-size: 18px;
 }
-.nt-tempo-btn:hover { background: var(--du-bg-2); color: var(--du-text); }
-.nt-tempo-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+.nt-tempo-btn:hover { background: var(--ms-card-subtle); border-color: var(--ms-line-2); }
+.nt-tempo-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
 
 /* ── Panels and cards ────────────────────────────────────────────── */
 .nt-panel {
-  background: var(--du-bg);
-  border: 2px solid var(--du-line);
-  border-radius: 18px;
-  padding: 18px;
+  background: var(--ms-card);
+  border: 2px solid var(--ms-line);
+  border-radius: var(--ms-r-lg);
+  padding: 24px;
+  box-shadow: var(--ms-shadow-subtle);
+}
+.nt-setup .nt-panel {
+  min-height: 0;
+}
+
+/* ── Setup workspace — mirror Musician Studio mockup proportions ─── */
+.nt-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.nt-mode-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: none;
+}
+
+.nt-game-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.nt-game-card {
+  flex: none;
+  min-width: 0;
+}
+
+.nt-workspace {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.nt-workspace-main {
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+  display: block;
+}
+
+.nt-control-deck {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: static;
+  min-height: 0;
+  overflow: visible;
+}
+
+.nt-deck-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px !important;
+}
+
+.nt-deck-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--ms-faint);
+}
+.nt-deck-title .nt-ic { width: 16px; height: 16px; }
+
+/* base.css shows the active panel with display:block, so the deck's own
+   stacking has to come from the panel, not from the card around it. */
+.note-trainer-root.is-game-fret .nt-deck-card #nt-deck-fret,
+.note-trainer-root.is-game-ear .nt-deck-card #nt-deck-ear,
+.note-trainer-root.is-game-rhythm .nt-deck-card #nt-deck-rhythm {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.nt-deck-title .nt-deck-emoji {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.nt-tip-box {
+  display: none;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px dashed var(--ms-line);
+  border-radius: var(--ms-r-md);
+  background: var(--ms-card-subtle);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ms-muted);
+  line-height: 1.4;
+}
+.note-trainer-root.is-game-fret #nt-tip-fret,
+.note-trainer-root.is-game-ear #nt-tip-ear,
+.note-trainer-root.is-game-rhythm #nt-tip-rhythm {
+  display: flex;
+}
+.nt-tip-box strong { color: var(--ms-text); font-weight: 700; }
+
+.nt-bpm-display {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.nt-bpm-display .nt-tempo-val {
+  align-items: baseline;
+  gap: 6px;
+}
+.nt-bpm-display .nt-tempo-val b {
+  font-family: var(--ms-display);
+  font-size: 44px;
+  font-weight: 600;
+  color: var(--ms-tempo);
+  line-height: 1;
+}
+.nt-bpm-display .nt-tempo-val span {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ms-muted);
+}
+.nt-bpm-slider {
+  flex: 1;
+  accent-color: var(--ms-tempo);
+  cursor: pointer;
+  height: 6px;
+}
+
+.nt-btn-rocket {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.nt-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.nt-panel-title h3 {
+  margin: 0;
+  font-family: var(--ms-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ms-text);
+}
+.nt-panel-subtitle {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ms-muted);
+  line-height: 1.4;
+}
+
+.nt-deck-grid {
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin: 0;
+}
+
+.nt-deck-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0;
+}
+
+.nt-option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nt-option-label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  width: 100%;
+}
+.nt-option-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--ms-muted);
+}
+
+/* A quiet "?" — the tip opens on hover or focus, so touch and keyboard both work. */
+.nt-help {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--ms-line);
+  border-radius: 999px;
+  background: var(--ms-card-subtle);
+  color: var(--ms-muted);
+  font-family: var(--ms-font);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: help;
+}
+.nt-help:hover,
+.nt-help:focus-visible {
+  color: var(--ms-text);
+  border-color: var(--ms-accent);
+  outline: none;
+}
+.nt-help-tip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 5;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-r-md);
+  background: var(--ms-card);
+  box-shadow: var(--ms-shadow-card);
+  color: var(--ms-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: 0;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-2px);
+  transition: opacity .12s ease, transform .12s ease, visibility .12s ease;
+}
+.nt-help:hover + .nt-help-tip,
+.nt-help:focus-visible + .nt-help-tip,
+.nt-option-label-row:focus-within .nt-help-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.nt-option-hint {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ms-faint);
+}
+.nt-option-hint b { color: var(--ms-muted); font-weight: 700; }
+
+.nt-rhythm-controls.nt-deck-stack {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+}
+
+.nt-bpm-picker {
+  align-items: center;
+  text-align: center;
+  padding: 16px;
+  gap: 12px;
+}
+.nt-bpm-picker .nt-tempo-row {
+  justify-content: center;
+  width: 100%;
+  gap: 12px;
+}
+.nt-bpm-picker .nt-tempo-val {
+  flex: 1;
+  justify-content: center;
+}
+/* Hide the BPM value that lives inside the stepper row — the display above is enough. */
+.nt-bpm-picker .nt-tempo-row .nt-tempo-val { display: none; }
+
+.nt-deck-card .nt-start-row {
+  margin-top: 4px;
+  flex-direction: column;
+  align-items: stretch;
+}
+.nt-deck-card .nt-btn-play,
+.nt-deck-card #nt-start {
+  width: 100%;
+  min-height: 56px;
+  padding: 16px;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.nt-deck-card .nt-ear-diff {
+  align-self: stretch;
+  width: 100%;
+}
+.nt-deck-card .nt-toggle {
+  max-width: none;
+}
+.nt-deck-card .nt-setup-hint {
+  display: none;
+}
+
+/* The neck, drawn. A dark board against the light panel, the way a fretboard
+   diagram is printed — and the one place in the setup that shows the
+   instrument rather than describing it. */
+.nt-fret-preview {
+  margin-bottom: 8px;
+  padding: 6px 10px 4px;
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-r-md);
+  background: var(--ms-fretboard);
+}
+.nt-fret-preview .note-trainer-fb-svg { max-height: 72px; }
+.nt-fret-preview .note-trainer-fb-board { fill: transparent; stroke: transparent; }
+.nt-fret-preview .note-trainer-fb-strlabel { fill: var(--ms-manico); }
+.nt-fret-preview .note-trainer-fb-fretnum { fill: rgba(226, 232, 240, 0.45); }
+.nt-fret-preview .note-trainer-fb-string { stroke: rgba(226, 232, 240, 0.7); }
+.nt-fret-preview .note-trainer-fb-fret { stroke: rgba(226, 232, 240, 0.18); }
+.nt-fret-preview .note-trainer-fb-inlay { fill: rgba(226, 232, 240, 0.22); }
+
+.nt-fret-preview-caption {
+  display: none;
+}
+
+/* Same density as the Musician Studio mockup. */
+.nt-levels,
+.nt-ear-levels,
+.nt-rhythm-levels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+.nt-level-card { flex: none; min-width: 0; }
+
+/* Note pills: only on the study you're about to play. */
+#nt-panel-fret .nt-level-card:not(.active) .nt-lc-notes,
+#nt-panel-fret .nt-level-card:not(.active) .nt-lc-foot {
+  display: none;
+}
+#nt-panel-fret .nt-level-card {
+  padding: 14px 16px;
+}
+
+.nt-lc-mastery { display: none; }
+.nt-level-card.active .nt-lc-mastery { display: flex; }
+
+@media (max-width: 560px) {
+  .nt-ear-levels { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .nt-game-picker { grid-template-columns: 1fr; }
+  .nt-workspace { grid-template-columns: 1fr; }
+  .nt-control-deck { position: static; }
+  .nt-rhythm-levels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .note-trainer-root { height: auto; overflow-y: auto; }
 }
 
 .nt-game-card, .nt-level-card {
-  border: 2px solid var(--du-line);
-  border-bottom: var(--du-edge) solid var(--du-line);
-  border-radius: 18px;
-  background: var(--du-bg);
+  border: 2px solid var(--ms-line);
+  border-bottom: 4px solid var(--ms-line);
+  border-radius: var(--ms-r-md);
+  background: var(--ms-card-subtle);
+  box-shadow: none;
   transition: border-color .12s ease, background .12s ease, transform .05s ease;
 }
+.nt-game-card {
+  border-bottom-width: 5px;
+  border-radius: var(--ms-r-lg);
+  background: var(--ms-card);
+  box-shadow: var(--ms-shadow-card);
+}
 .nt-game-card::before, .nt-level-card::before { display: none; }
-.nt-game-card:hover, .nt-level-card:hover { background: var(--du-bg-2); border-color: var(--du-line-2); }
-.nt-game-card:active, .nt-level-card:active { transform: translateY(2px); border-bottom-width: 2px; }
-.nt-game-card.active, .nt-level-card.active {
-  border-color: var(--du-green);
-  background: var(--du-green-soft);
+.nt-game-card:hover, .nt-level-card:hover {
+  background: var(--ms-card-subtle);
+  border-color: var(--ms-faint);
+  transform: translateY(-2px);
+}
+.nt-game-card:active, .nt-level-card:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
 }
 
-.nt-gc-title, .nt-level-card .nt-lc-title { font-weight: 800; font-size: 15px; }
-.nt-gc-desc, .nt-level-card .nt-lc-desc { color: var(--du-muted); font-weight: 600; font-size: 12.5px; }
+/* Default active = current section accent */
+.nt-game-card.active, .nt-level-card.active {
+  border-color: var(--ms-accent);
+  border-bottom-color: var(--ms-accent-dark);
+  background: var(--ms-accent-soft);
+}
+
+/* Per-game picker colors (visible even when not the selected root mode) */
+.nt-game-card[data-accent="rhythm"].active {
+  border-color: var(--ms-tempo);
+  border-bottom-color: var(--ms-tempo-dark);
+  background: var(--ms-tempo-light);
+}
+.nt-game-card[data-accent="fret"].active {
+  border-color: var(--ms-manico);
+  border-bottom-color: var(--ms-manico-dark);
+  background: var(--ms-manico-light);
+}
+.nt-game-card[data-accent="ear"].active {
+  border-color: var(--ms-orecchio);
+  border-bottom-color: var(--ms-orecchio-dark);
+  background: var(--ms-orecchio-light);
+}
+
+/* The three pillars read as one row of equal pills: icon, name, one line on
+   what it trains, and how much of it is behind you. Anything longer is the
+   card's tooltip — the panel underneath does the explaining. */
+.nt-game-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  text-align: left;
+}
+
+.nt-gc-body { min-width: 0; flex: 1; }
+
+.nt-gc-title, .nt-level-card .nt-lc-title {
+  font-family: var(--ms-display);
+  font-weight: 600;
+  font-size: 18px;
+}
+.nt-gc-title { display: block; margin-bottom: 2px; }
+
+.nt-gc-tag {
+  display: block;
+  color: var(--ms-muted);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.35;
+  /* Two lines at most. The grid keeps the three cards the same height, so a
+     tag that wraps costs nothing; a tag that runs on would. */
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  overflow: hidden;
+}
+
+.nt-level-card .nt-lc-desc {
+  color: var(--ms-muted);
+  font-weight: 500;
+  font-size: 12.5px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.nt-gc-mastery {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--ms-line);
+  background: var(--ms-card-subtle);
+  color: var(--ms-muted);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.nt-game-card[data-accent="rhythm"].active .nt-gc-mastery { color: var(--ms-tempo); }
+.nt-game-card[data-accent="fret"].active .nt-gc-mastery { color: var(--ms-manico); }
+.nt-game-card[data-accent="ear"].active .nt-gc-mastery { color: var(--ms-orecchio); }
+.nt-game-card.active .nt-gc-mastery {
+  background: var(--ms-card);
+  border-color: transparent;
+}
 
 .nt-gc-icon {
-  width: 38px; height: 38px;
-  border-radius: 14px;
-  background: var(--du-bg-2);
-  border: 2px solid var(--du-line);
-  color: var(--du-muted);
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--ms-card-subtle);
+  border: 1px solid var(--ms-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  line-height: 1;
+  flex: none;
 }
+.nt-game-card[data-accent="rhythm"] .nt-gc-icon { color: var(--ms-tempo); }
+.nt-game-card[data-accent="fret"] .nt-gc-icon { color: var(--ms-manico); }
+.nt-game-card[data-accent="ear"] .nt-gc-icon { color: var(--ms-orecchio); }
+
 .nt-game-card.active .nt-gc-icon {
-  background: var(--du-green);
-  border-color: var(--du-green);
-  color: #fff;
+  background: var(--ms-card);
+  border-color: transparent;
 }
-.nt-gc-icon .nt-ic { width: 20px; height: 20px; }
+.nt-game-card[data-accent="rhythm"].active .nt-gc-icon { color: var(--ms-tempo); }
+.nt-game-card[data-accent="fret"].active .nt-gc-icon { color: var(--ms-manico); }
+.nt-game-card[data-accent="ear"].active .nt-gc-icon { color: var(--ms-orecchio); }
+.nt-gc-icon .nt-ic { width: 24px; height: 24px; }
 
 .nt-lc-chip {
-  background: var(--du-bg-2);
-  color: var(--du-muted);
+  background: var(--ms-card);
+  color: var(--ms-muted);
+  border: 1px solid var(--ms-line);
   border-radius: 999px;
   padding: 2px 9px;
   font-weight: 700;
   font-size: 11px;
 }
-.nt-level-card.active .nt-lc-chip { background: rgba(255,255,255,0.75); color: var(--du-green-dark); }
-
-.nt-lc-num {
-  background: var(--du-green);
-  color: #fff;
-  border-radius: 999px;
+.nt-level-card.active .nt-lc-chip {
+  background: color-mix(in srgb, var(--ms-card) 75%, transparent);
+  color: var(--ms-accent-dark);
+  border-color: transparent;
 }
 
-/* Progress bars: thick pills, the way a game shows a goal. */
-.nt-lc-bar {
-  height: 14px;
+/* Number on its own line, then the name, then one quiet line of detail —
+   three short beats instead of a paragraph of chips. */
+.nt-ear-levels .nt-level-card,
+.nt-rhythm-levels .nt-level-card,
+#nt-levels .nt-level-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--ms-card-subtle);
+}
+.nt-ear-levels .nt-level-card.active,
+.nt-rhythm-levels .nt-level-card.active,
+#nt-levels .nt-level-card.active { background: var(--ms-accent-soft); }
+
+.nt-ear-levels .nt-lc-num,
+.nt-rhythm-levels .nt-lc-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: var(--ms-card);
+  color: var(--ms-muted);
+  border: 1px solid var(--ms-line);
   border-radius: 999px;
-  background: var(--du-line);
+  font-size: 12px;
+  font-weight: 800;
+}
+.nt-ear-levels .nt-level-card.active .nt-lc-num,
+.nt-rhythm-levels .nt-level-card.active .nt-lc-num {
+  background: var(--ms-card);
+  border-color: var(--ms-line);
+  color: var(--ms-muted);
+}
+.nt-ear-levels .nt-lc-title,
+.nt-rhythm-levels .nt-lc-title,
+#nt-levels .nt-lc-title {
+  font-family: var(--ms-font);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.nt-lc-meta {
+  color: var(--ms-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Mockup has no drill blurb under the grid — tip lives in the deck. */
+#nt-panel-rhythm #nt-rhythm-tip,
+#nt-panel-rhythm #nt-rhythm-warn,
+#nt-panel-ear #nt-ear-intro { display: none; }
+
+/* Latency lives in the topbar after calibration — not in the deck. */
+.nt-deck-card #nt-latency-row { display: none !important; }
+
+/* BPM / latency notes stay out of the deck; the option hints under the
+   segmented controls are the explanations players need. */
+.nt-deck-card .nt-ctl .nt-tempo-note { display: none; }
+.nt-deck-stack .nt-option-group .nt-option-hint { display: block; }
+
+/* One meta line per study: what it is on the left, what you scored on the
+   right — so a grid of ten reads down a single column of numbers. */
+.nt-ear-levels .nt-lc-foot,
+.nt-rhythm-levels .nt-lc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 0;
+}
+.nt-lc-best { color: var(--ms-gold); font-weight: 800; font-size: 11.5px; }
+.nt-lc-best .nt-ic { color: var(--ms-gold); }
+.nt-lc-best.is-empty { color: var(--ms-faint); font-weight: 600; }
+
+.nt-lc-bar {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--ms-segment);
   border: none;
 }
 .nt-lc-bar > i {
-  background: var(--du-green);
+  background: var(--ms-accent);
   border-radius: 999px;
 }
-.nt-lc-pct { font-weight: 800; color: var(--du-muted); }
+.nt-lc-pct { font-weight: 800; color: var(--ms-muted); }
 
 /* ── Inputs ──────────────────────────────────────────────────────── */
 .note-trainer-root select {
   min-height: 46px;
-  border: 2px solid var(--du-line);
-  border-radius: 14px;
-  background: var(--du-bg);
-  color: var(--du-text);
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-r-sm);
+  background: var(--ms-card-subtle);
+  color: var(--ms-text);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
+  padding: 0 14px;
 }
-.note-trainer-root select:hover { border-color: var(--du-line-2); }
-.nt-field > span { font-size: 12px; font-weight: 800; letter-spacing: 0.05em; color: var(--du-muted); }
+.note-trainer-root select:hover { border-color: var(--ms-accent); }
+.nt-field > span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--ms-muted);
+}
 
-/* Segmented controls read as pills; the active one is the accent. */
 .nt-ear-diff {
-  background: var(--du-bg-2);
-  border: 2px solid var(--du-line);
-  border-radius: 999px;
+  background: var(--ms-segment);
+  border: 1px solid var(--ms-line);
+  border-radius: 12px;
   padding: 4px;
 }
 .nt-ear-diff .nt-seg {
-  border-radius: 999px;
-  font-weight: 800;
-  font-size: 13px;
-  color: var(--du-muted);
-  min-height: 36px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--ms-muted);
+  min-height: 0;
+  padding: 8px 6px;
 }
-.nt-ear-diff .nt-seg:hover { color: var(--du-text); background: transparent; }
+.nt-ear-diff .nt-seg:hover { color: var(--ms-text); background: transparent; }
 .nt-ear-diff .nt-seg.active {
-  background: var(--du-green);
-  color: #fff;
-  box-shadow: 0 2px 0 var(--du-green-dark);
+  background: var(--ms-segment-active);
+  color: var(--ms-text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--ms-line);
 }
+
+/* ── Rhythm controls / BPM ───────────────────────────────────────── */
+.nt-ctl {
+  background: var(--ms-card-subtle);
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-r-md);
+  padding: 16px;
+}
+.nt-tempo-head {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--ms-muted);
+}
+.nt-tempo-val b {
+  font-family: var(--ms-display);
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--ms-tempo);
+  line-height: 1;
+}
+.nt-tempo-val span {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ms-muted);
+}
+.nt-tempo-note { color: var(--ms-muted); font-weight: 600; }
+.nt-tempo-note b { color: var(--ms-ok-dark); }
 
 /* ── HUD ─────────────────────────────────────────────────────────── */
-.nt-prompt .nt-prompt-lead { font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--du-muted); }
-.nt-prompt .nt-note { font-size: 42px; font-weight: 800; letter-spacing: -0.02em; }
-.nt-stat .nt-stat-val { font-size: 24px; font-weight: 800; }
-.nt-stat .nt-stat-lbl { font-weight: 800; font-size: 10.5px; letter-spacing: 0.06em; color: var(--du-muted); }
-.nt-stat.combo .nt-stat-val { color: var(--du-yellow-dark); }
+.nt-prompt .nt-prompt-lead {
+  font-weight: 800;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ms-muted);
+}
+.nt-prompt .nt-note {
+  font-family: var(--ms-display);
+  font-size: 42px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.nt-stat .nt-stat-val {
+  font-family: var(--ms-display);
+  font-size: 24px;
+  font-weight: 600;
+}
+.nt-stat .nt-stat-lbl {
+  font-weight: 800;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--ms-muted);
+}
+.nt-stat.combo .nt-stat-val { color: var(--ms-gold); }
 
 .nt-detected {
-  background: var(--du-bg-2);
+  background: var(--ms-card-subtle);
   border-radius: 14px;
   padding: 8px 12px;
   font-weight: 700;
-  color: var(--du-muted);
+  color: var(--ms-muted);
 }
 
-/* Feedback banners: the loud, unmissable strip a game uses. */
 .nt-feedback {
   font-weight: 800;
   font-size: 15px;
@@ -326,159 +1155,214 @@ html, body {
   padding: 0 4px;
   min-height: 30px;
 }
-.nt-feedback.ok { color: var(--du-green-dark); }
-.nt-feedback.err { color: var(--du-red-dark); }
-.nt-feedback.hint { color: var(--du-yellow-dark); }
+.nt-feedback.ok { color: var(--ms-ok-dark); }
+.nt-feedback.err { color: var(--ms-err-dark); }
+.nt-feedback.hint { color: var(--ms-gold); }
 
 /* ── Ear training ────────────────────────────────────────────────── */
 .nt-choice {
-  border: 2px solid var(--du-line);
-  border-bottom: var(--du-edge) solid var(--du-line);
+  border: 2px solid var(--ms-line);
+  border-bottom: var(--ms-edge) solid var(--ms-line);
   border-radius: 16px;
-  background: var(--du-bg);
-  color: var(--du-text);
+  background: var(--ms-card);
+  color: var(--ms-text);
   font-weight: 800;
-  /* Answer buttons are the thing you actually hit: big targets, big type. */
   min-width: 84px;
   min-height: 64px;
   font-size: 20px;
   transition: transform .05s ease, background .12s ease, border-color .12s ease;
 }
 .nt-ear-choices { gap: 12px; }
-.nt-choice:hover:not(:disabled) { background: var(--du-bg-2); }
+.nt-choice:hover:not(:disabled) { background: var(--ms-card-subtle); }
 .nt-choice:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 2px; }
 .nt-choice.correct {
-  background: var(--du-green-soft);
-  border-color: var(--du-green);
-  color: var(--du-green-dark);
+  background: var(--ms-ok-soft);
+  border-color: var(--ms-ok);
+  color: var(--ms-ok-dark);
 }
 .nt-choice.wrong {
-  background: var(--du-red-soft);
-  border-color: var(--du-red);
-  color: var(--du-red-dark);
+  background: var(--ms-err-soft);
+  border-color: var(--ms-err);
+  color: var(--ms-err-dark);
 }
-.nt-ear-ask { font-weight: 800; font-size: 17px; color: var(--du-text); }
-.nt-viz-core { background: var(--du-green); color: #fff; }
+.nt-ear-ask { font-weight: 800; font-size: 17px; color: var(--ms-text); }
+.nt-viz-core {
+  background: var(--ms-accent);
+  color: #fff;
+  border-color: var(--ms-accent-dark);
+}
 
-.nt-th-head, .nt-em-head { font-weight: 800; color: var(--du-text); }
-.nt-th-abbr, .nt-em-abbr { font-weight: 800; color: var(--du-green-dark); }
-.nt-em-fill.is-strong { background: var(--du-green); }
-.nt-em-fill.is-mid { background: var(--du-yellow); }
-.nt-em-fill.is-weak { background: var(--du-red); }
+.nt-th-head, .nt-em-head { font-weight: 800; color: var(--ms-text); }
+.nt-th-abbr, .nt-em-abbr { font-weight: 800; color: var(--ms-accent-dark); }
+.nt-em-fill.is-strong { background: var(--ms-ok); }
+.nt-em-fill.is-mid { background: var(--ms-gold); }
+.nt-em-fill.is-weak { background: var(--ms-err); }
 
 /* ── Toggle ──────────────────────────────────────────────────────── */
-.nt-toggle-track { background: var(--du-line); border-color: var(--du-line-2); }
-.nt-toggle input:checked + .nt-toggle-track { background: var(--du-green); border-color: var(--du-green-dark); }
-.nt-toggle-title { font-weight: 800; color: var(--du-text); }
-.nt-toggle-desc { color: var(--du-muted); font-weight: 600; }
+.nt-toggle-track { background: var(--ms-segment); border-color: var(--ms-line-2); }
+.nt-toggle input:checked + .nt-toggle-track {
+  background: var(--ms-accent);
+  border-color: var(--ms-accent-dark);
+}
+.nt-toggle input:checked + .nt-toggle-track .nt-toggle-thumb { background: #fff; }
+.nt-toggle-title { font-weight: 800; color: var(--ms-text); }
+.nt-toggle-desc { color: var(--ms-muted); font-weight: 500; }
+
+/* ── Drill / fretboard mini ──────────────────────────────────────── */
+.nt-drill {
+  background: var(--ms-fretboard);
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-r-md);
+  color: #F8FAFC;
+}
+.nt-drill-head .t { color: var(--ms-faint); }
+.nt-fb-name { color: var(--ms-manico); }
+.nt-fb-row.on .nt-fb-name { color: #fff; }
+.nt-fb-row.on .nt-fb-wire { background: var(--ms-manico); }
+.nt-fb-row.on .nt-fb-dot { background: var(--ms-manico); border-color: #fff; }
 
 /* ── Results / calibration overlays ──────────────────────────────── */
 .nt-results-card, .nt-calib-card {
   border-radius: 22px;
-  border: 2px solid var(--du-line);
-  background: var(--du-bg);
+  border: 2px solid var(--ms-line);
+  background: var(--ms-card);
+  box-shadow: var(--ms-shadow-subtle);
 }
 .nt-results-card h2 { font-size: 24px; }
 .nt-medal { font-size: 56px; }
-.nt-results-msg { color: var(--du-muted); font-weight: 700; }
+.nt-results-msg { color: var(--ms-muted); font-weight: 700; }
 .nt-re-verdict, .nt-re-advice, .nt-re-diag {
   border-radius: 16px;
-  border: 2px solid var(--du-line);
+  border: 2px solid var(--ms-line);
 }
-.nt-re-advice-h { font-weight: 800; color: var(--du-text); }
+.nt-re-advice-h { font-weight: 800; color: var(--ms-text); }
 .nt-cs { border-radius: 999px; font-weight: 800; }
-.nt-cs.is-now { background: var(--du-green); color: #fff; border-color: var(--du-green); }
-.nt-cs.is-done { color: var(--du-green-dark); border-color: var(--du-green); }
+.nt-cs.is-now {
+  background: var(--ms-accent);
+  color: #fff;
+  border-color: var(--ms-accent);
+}
+.nt-cs.is-done { color: var(--ms-ok-dark); border-color: var(--ms-ok); }
 .nt-calib-verdict { border-radius: 999px; font-weight: 800; }
 
 /* ── Toasts ──────────────────────────────────────────────────────── */
 .nt-toast {
   border-radius: 18px;
-  border: 2px solid var(--du-green);
-  border-bottom-width: var(--du-edge);
-  background: var(--du-bg);
+  border: 2px solid var(--ms-accent);
+  border-bottom-width: var(--ms-edge);
+  background: var(--ms-card);
   font-weight: 700;
+  box-shadow: var(--ms-shadow-subtle);
 }
 
 /* ── Warnings ────────────────────────────────────────────────────── */
 .nt-warn {
   border-radius: 16px;
-  border: 2px solid var(--du-yellow);
-  background: rgba(255, 200, 0, 0.10);
-  color: var(--du-text);
+  border: 2px solid var(--ms-gold);
+  background: var(--ms-gold-soft);
+  color: var(--ms-text);
   font-weight: 600;
 }
-.nt-setup-hint { font-weight: 700; color: var(--du-muted); }
-.nt-setup-hint.is-warn { color: var(--du-yellow-dark); }
+.nt-setup-hint { font-weight: 700; color: var(--ms-muted); }
+.nt-setup-hint.is-warn { color: var(--ms-gold); }
 
-/* ── Settings page (the plugin's own panel) ──────────────────────────
-   The panel ships its own <style> inside the fragment, and that block is
-   injected into the body — later in document order than this file. Equal
-   specificity would lose, so every rule here is scoped through the page
-   wrapper to outrank it. */
+/* ── Settings page ───────────────────────────────────────────────── */
 .nt-settings-page .note-trainer-settings {
-  --nts-text: var(--du-text);
-  --nts-dim: var(--du-text);
-  --nts-muted: var(--du-muted);
-  --nts-inset: var(--du-bg);
-  --nts-line: var(--du-line);
-  --nts-accent: var(--du-green);
-  --nts-ok: var(--du-green);
-  font-family: var(--du-font);
+  --nts-text: var(--ms-text);
+  --nts-dim: var(--ms-text);
+  --nts-muted: var(--ms-muted);
+  --nts-inset: var(--ms-card);
+  --nts-line: var(--ms-line);
+  --nts-accent: var(--ms-accent);
+  --nts-ok: var(--ms-ok);
+  font-family: var(--ms-font);
   font-size: 14px;
   font-weight: 600;
 }
 .nt-settings-page .note-trainer-settings .nts-card {
-  background: var(--du-bg);
-  border: 2px solid var(--du-line);
-  border-radius: 18px;
+  background: var(--ms-card);
+  border: 2px solid var(--ms-line);
+  border-radius: var(--ms-r-lg);
+  box-shadow: var(--ms-shadow-card);
 }
-.nt-settings-page .note-trainer-settings h3 { font-weight: 800; font-size: 17px; }
+.nt-settings-page .note-trainer-settings h3 {
+  font-family: var(--ms-display);
+  font-weight: 600;
+  font-size: 17px;
+}
 .nt-settings-page .note-trainer-settings select {
   min-height: 46px;
-  border: 2px solid var(--du-line);
-  border-radius: 14px;
-  background: var(--du-bg);
-  color: var(--du-text);
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-r-sm);
+  background: var(--ms-card-subtle);
+  color: var(--ms-text);
   font-weight: 700;
 }
 .nt-settings-page .note-trainer-settings button {
   border-radius: 16px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
   min-height: 46px;
 }
 .nt-settings-page .note-trainer-settings .nts-danger {
   border: none;
-  border-bottom: var(--du-edge) solid var(--du-red-dark);
-  background: var(--du-red);
+  border-bottom: var(--ms-edge) solid var(--ms-err-dark);
+  background: var(--ms-err);
   color: #fff;
 }
-.nt-settings-page .note-trainer-settings .nts-danger:hover { filter: brightness(1.06); background: var(--du-red); }
-.nt-settings-page .note-trainer-settings .nts-danger:active { transform: translateY(2px); border-bottom-width: 2px; }
-.nt-settings-page .note-trainer-settings .nts-status { font-weight: 800; color: var(--du-green-dark); }
+.nt-settings-page .note-trainer-settings .nts-danger:hover {
+  filter: brightness(1.06);
+  background: var(--ms-err);
+}
+.nt-settings-page .note-trainer-settings .nts-danger:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+.nt-settings-page .note-trainer-settings .nts-status {
+  font-weight: 800;
+  color: var(--ms-ok-dark);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .nt-btn, .nt-choice, .nt-game-card, .nt-level-card, .nt-tempo-btn { transition: none; }
   .nt-btn:active, .nt-choice:active, .nt-tempo-btn:active { transform: none; }
+  .nt-input-dot { animation: none; }
 }
 
-/* ── Input bar: device, level meter, monitoring ───────────────────────
-   Choosing the input is the first thing a player has to get right, so it
-   sits in the chrome next to language and settings rather than inside the
-   setup grid. The meter is the answer to "is it hearing me?". */
+/* ── Input bar ───────────────────────────────────────────────────── */
 .nt-input {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 5px 6px 5px 12px;
-  border: 2px solid var(--du-line);
-  border-radius: 999px;
-  background: var(--du-bg);
+  padding: 6px 8px 6px 14px;
+  border: 1px solid var(--ms-line);
+  border-radius: 30px;
+  background: var(--ms-card-subtle);
 }
 
-.nt-input-icon { font-size: 14px; line-height: 1; }
+/* Signal dot: grey until the device is open, green and breathing once it is,
+   the warning colour when something needs the player's attention. */
+.nt-input-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ms-faint);
+  flex: none;
+}
+.nt-input.is-live .nt-input-dot,
+.nt-input.is-ok .nt-input-dot {
+  background: var(--ms-ok);
+  box-shadow: 0 0 8px var(--ms-ok);
+  animation: nt-signal 2s infinite;
+}
+.nt-input.is-warn .nt-input-dot { background: var(--ms-gold); box-shadow: 0 0 8px var(--ms-gold); }
+.nt-input.is-err .nt-input-dot { background: var(--ms-err); box-shadow: 0 0 8px var(--ms-err); }
+
+@keyframes nt-signal {
+  0%, 100% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
 
 .nt-input-select.nt-input-select {
   width: auto;
@@ -488,17 +1372,17 @@ html, body {
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: var(--du-text);
+  color: var(--ms-text);
   font: inherit;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .nt-meter {
   width: 68px;
   height: 10px;
   border-radius: 999px;
-  background: var(--du-line);
+  background: var(--ms-segment);
   overflow: hidden;
   flex: 0 0 auto;
 }
@@ -507,47 +1391,49 @@ html, body {
   height: 100%;
   width: 0;
   border-radius: 999px;
-  background: var(--du-green);
+  background: var(--ms-ok);
   transition: width .06s linear;
 }
-.nt-meter.is-hot > i { background: var(--du-green); box-shadow: 0 0 8px var(--du-green); }
+.nt-meter.is-hot > i {
+  background: var(--ms-ok);
+  box-shadow: 0 0 8px var(--ms-ok);
+}
 
 .nt-input-status {
   font-size: 12px;
   font-weight: 700;
-  color: var(--du-muted);
+  color: var(--ms-muted);
   white-space: nowrap;
 }
-.nt-input-status.is-ok { color: var(--du-green-dark); }
-.nt-input-status.is-warn { color: var(--du-yellow-dark); }
-.nt-input-status.is-err { color: var(--du-red-dark); }
+.nt-input-status.is-ok { color: var(--ms-ok-dark); }
+.nt-input-status.is-warn { color: var(--ms-gold); }
+.nt-input-status.is-err { color: var(--ms-err-dark); }
 
 .nt-input-monitor {
   min-width: 34px;
   min-height: 34px;
-  border: 2px solid var(--du-line);
-  border-radius: 999px;
-  background: var(--du-bg);
+  border: 1px solid var(--ms-line);
+  border-radius: 12px;
+  background: var(--ms-card);
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
 }
-.nt-input-monitor:hover { background: var(--du-bg-2); }
+.nt-input-monitor:hover { background: var(--ms-card-subtle); }
 .nt-input-monitor.is-on {
-  background: var(--du-green);
-  border-color: var(--du-green-dark);
+  background: var(--ms-ok);
+  border-color: var(--ms-ok-dark);
+  color: #fff;
 }
 
-/* First-run panel: deliberately loud, and gone for good once the app has
-   actually heard the instrument once. While it is up the screen moves down
-   rather than being covered. */
-body.has-input-hint .note-trainer-root { padding-top: 230px; }
+/* Hint floats over the topbar — don't shove the whole room down and force scroll. */
+body.has-input-hint .note-trainer-root { padding-top: 100px; }
 @media (max-width: 820px) {
-  body.has-input-hint .note-trainer-root { padding-top: 330px; }
+  body.has-input-hint .note-trainer-root { padding-top: 100px; }
 }
 .nt-input-hint {
   position: fixed;
-  top: 68px;
+  top: 80px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
@@ -556,30 +1442,41 @@ body.has-input-hint .note-trainer-root { padding-top: 230px; }
   align-items: center;
   gap: 16px;
   padding: 16px 18px;
-  border: 2px solid var(--du-green);
-  border-bottom-width: var(--du-edge);
+  border: 2px solid var(--ms-accent);
+  border-bottom-width: var(--ms-edge);
   border-radius: 18px;
-  background: var(--du-green-soft);
-  color: var(--du-text);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  background: var(--ms-accent-soft);
+  color: var(--ms-text);
+  box-shadow: var(--ms-shadow-subtle);
 }
-.nt-input-hint.is-ok { border-color: var(--du-green-dark); }
+.nt-input-hint.is-ok { border-color: var(--ms-ok-dark); }
 .nt-ih-body b { font-size: 15px; font-weight: 800; }
-.nt-ih-body p { margin: 4px 0 0; font-size: 13px; font-weight: 600; line-height: 1.45; color: var(--du-text); }
-.nt-ih-actions { margin-left: auto; display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; }
+.nt-ih-body p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ms-text);
+}
+.nt-ih-actions {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 0 auto;
+}
 .nt-ih-go {
   min-height: 42px;
   padding: 0 18px;
   border: none;
-  border-bottom: var(--du-edge) solid var(--du-green-dark);
+  border-bottom: var(--ms-edge) solid var(--ms-accent-dark);
   border-radius: 14px;
-  background: var(--du-green);
+  background: var(--ms-accent);
   color: #fff;
   font: inherit;
-  font-weight: 800;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-family: var(--ms-display);
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
 }
 .nt-ih-go:active { transform: translateY(2px); border-bottom-width: 2px; }
@@ -587,78 +1484,68 @@ body.has-input-hint .note-trainer-root { padding-top: 230px; }
 .nt-ih-skip {
   border: none;
   background: none;
-  color: var(--du-muted);
+  color: var(--ms-muted);
   font: inherit;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
-.nt-ih-skip:hover { color: var(--du-text); }
+.nt-ih-skip:hover { color: var(--ms-text); }
 
 @media (max-width: 820px) {
-  .nt-topbar { height: auto; flex-wrap: wrap; padding: 8px 12px; }
+  .nt-topbar { height: auto; flex-wrap: wrap; padding: 10px 14px; }
   .nt-input { order: 3; width: 100%; }
   .nt-input-select.nt-input-select { flex: 1; max-width: none; }
-  .nt-input-hint { top: 116px; flex-direction: column; align-items: flex-start; }
+  .nt-input-hint { top: 120px; flex-direction: column; align-items: flex-start; }
   .nt-ih-actions { margin-left: 0; flex-direction: row; align-items: center; }
 }
 
-/* Monitoring volume: a fixed-gain passthrough is unusable — too loud on an
-   interface, too quiet on a laptop mic. Hidden until monitoring is on. */
 .nt-input-volume {
   width: 0;
   opacity: 0;
   padding: 0;
   margin: 0;
   transition: width .15s ease, opacity .15s ease;
-  accent-color: var(--du-green);
+  accent-color: var(--ms-accent);
   cursor: pointer;
 }
 .nt-input-volume.is-on { width: 78px; opacity: 1; }
 
-/* A passing note, not a warning: it explains a symptom the player may never
-   have (a cabled instrument cannot feed back). */
 .nt-input-tip {
   position: fixed;
-  top: 68px;
+  top: 80px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 19;
   max-width: min(520px, calc(100vw - 32px));
   padding: 10px 16px;
-  border: 2px solid var(--du-line);
+  border: 1px solid var(--ms-line);
   border-radius: 999px;
-  background: var(--du-bg);
-  color: var(--du-muted);
+  background: var(--ms-card);
+  color: var(--ms-muted);
   font-size: 13px;
   font-weight: 700;
   text-align: center;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10);
+  box-shadow: var(--ms-shadow-card);
 }
-.nt-input-tip:hover { color: var(--du-text); }
+.nt-input-tip:hover { color: var(--ms-text); }
 
-/* Not measured yet: the button that fixes it should look like the way forward,
-   and the panel should say something is missing. */
 #nt-latency-row:not(.is-calibrated) {
-  border: 2px solid var(--du-yellow);
+  border: 2px solid var(--ms-gold);
   border-radius: 16px;
   padding: 10px;
-  background: rgba(255, 200, 0, 0.08);
+  background: var(--ms-gold-soft);
 }
 #nt-latency-row:not(.is-calibrated) #nt-calib-start {
-  background: var(--du-green);
+  background: var(--ms-accent);
   border: none;
-  border-bottom: var(--du-edge) solid var(--du-green-dark);
+  border-bottom: var(--ms-edge) solid var(--ms-accent-dark);
   color: #fff;
 }
-#nt-latency-row:not(.is-calibrated) #nt-calib-start:hover { filter: brightness(1.06); }
+#nt-latency-row:not(.is-calibrated) #nt-calib-start:hover { filter: brightness(1.05); }
 
-/* ── Results card ────────────────────────────────────────────────────
-   The rhythm report used to open as a wall: six count rows, a verdict, two
-   pieces of advice and a diagnostics panel, all at once. Now it reads in the
-   order a teacher speaks — medal, the numbers that matter, one sentence about
-   how it went, one thing to work on — and the tables fold away underneath. */
+/* ── Results card ────────────────────────────────────────────────── */
 .nt-results-card {
   width: min(560px, 94vw);
   max-height: 88vh;
@@ -672,36 +1559,40 @@ body.has-input-hint .note-trainer-root { padding-top: 230px; }
   gap: 28px;
   margin: 18px 0 14px;
   padding: 16px 0;
-  border-top: 2px solid var(--du-line);
-  border-bottom: 2px solid var(--du-line);
+  border-top: 2px solid var(--ms-line);
+  border-bottom: 2px solid var(--ms-line);
 }
 .nt-results-stats .nt-stat-val { font-size: 28px; }
 
-.nt-results-msg { font-size: 15px; font-weight: 700; color: var(--du-text); line-height: 1.5; }
+.nt-results-msg {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ms-text);
+  line-height: 1.5;
+}
 
-/* The sentence that actually explains the run. */
 .nt-re-verdict {
   margin-top: 18px;
   padding: 14px 16px;
   border: none;
   border-radius: 16px;
-  background: var(--du-bg-2);
+  background: var(--ms-card-subtle);
   font-size: 14.5px;
   font-weight: 600;
   line-height: 1.6;
-  color: var(--du-text);
+  color: var(--ms-text);
 }
 .nt-re-verdict.is-hintish {
-  background: rgba(255, 200, 0, 0.12);
-  border: 2px solid var(--du-yellow);
+  background: var(--ms-gold-soft);
+  border: 2px solid var(--ms-gold);
 }
 
-.nt-re-advice { margin-top: 18px; padding-top: 0; border-top: none; }
+.nt-re-advice { margin-top: 18px; padding-top: 0; border-top: none; border: none; background: none; padding: 0; }
 .nt-re-advice-h {
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.06em;
-  color: var(--du-muted);
+  color: var(--ms-muted);
   margin-bottom: 10px;
 }
 .nt-re-tip {
@@ -710,7 +1601,7 @@ body.has-input-hint .note-trainer-root { padding-top: 230px; }
   align-items: flex-start;
   padding: 14px 16px;
   margin-bottom: 10px;
-  border: 2px solid var(--du-line);
+  border: 2px solid var(--ms-line);
   border-radius: 16px;
   font-size: 14px;
   font-weight: 600;
@@ -719,25 +1610,25 @@ body.has-input-hint .note-trainer-root { padding-top: 230px; }
 }
 .nt-re-tip .i { font-size: 20px; line-height: 1.2; flex: 0 0 auto; }
 
-/* Counts and input report: reference material, one tap away. */
-.nt-re-diag { margin-top: 16px; border-top: 2px solid var(--du-line); padding-top: 14px; }
-.nt-re-diag > summary { font-size: 13px; font-weight: 800; color: var(--du-muted); }
-.nt-re-diag > summary:hover { color: var(--du-text); }
+.nt-re-diag {
+  margin-top: 16px;
+  border: none;
+  border-top: 2px solid var(--ms-line);
+  border-radius: 0;
+  padding-top: 14px;
+}
+.nt-re-diag > summary { font-size: 13px; font-weight: 800; color: var(--ms-muted); }
+.nt-re-diag > summary:hover { color: var(--ms-text); }
 .nt-re-diag-body { padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
 .nt-re-row { font-size: 13.5px; font-weight: 600; }
-.nt-re-row span { color: var(--du-muted); }
-.nt-re-row b { font-weight: 800; color: var(--du-text); }
+.nt-re-row span { color: var(--ms-muted); }
+.nt-re-row b { font-weight: 800; color: var(--ms-text); }
 
 .nt-results-actions { margin-top: 22px; gap: 12px; }
 
-/* base.css frames the whole advice block; the individual tips carry the frame
-   now, so the outer one would double it. */
-.nt-re-advice { border: none; background: none; padding: 0; }
-
-/* The counts section is a disclosure, not a card: the earlier blanket rule
-   framed it like one. */
-.nt-re-diag {
-  border: none;
-  border-top: 2px solid var(--du-line);
-  border-radius: 0;
+/* Fretboard SVG marks pick up section accent via --nt-accent already */
+.note-trainer-fb-board { fill: #1E293B; stroke: #334155; }
+.note-trainer-fb-mark.is-detected circle {
+  fill: color-mix(in srgb, var(--ms-accent) 30%, transparent);
+  stroke: var(--ms-accent);
 }

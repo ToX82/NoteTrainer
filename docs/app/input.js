@@ -125,10 +125,20 @@
     // i18n-used: input.heard, input.in_game, input.denied, input.failed,
     // i18n-used: input.monitor_on, input.play_title, input.play_body,
     // i18n-used: input.heard_title, input.heard_body, input.denied_title, input.denied_body
+    // Reached the device and it is open — the states worth a lit dot even
+    // though they carry no warning colour of their own.
+    const LIVE = ['input.listening', 'input.faint', 'input.heard', 'input.monitor_on'];
+
     function setStatus(key, cls) {
         if (!els.status) return;
         els.status.textContent = key ? T(key) : '';
         els.status.className = 'nt-input-status' + (cls ? ' is-' + cls : '');
+        // The pill's dot repeats the same state, readable at a glance from
+        // across the room where the wording is not.
+        if (els.slot) {
+            els.slot.className = 'nt-input'
+                + (cls ? ' is-' + cls : (LIVE.indexOf(key) !== -1 ? ' is-live' : ''));
+        }
     }
 
     // ── First run ─────────────────────────────────────────────────────

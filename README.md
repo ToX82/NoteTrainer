@@ -37,6 +37,7 @@ docs/                    the published site
   app/
     i18n.js              translation runtime (T(), data-i18n, plurals)
     shim.js              stands in for the backend
+    theme.js             light/dark switch, loaded from the head before paint
     boot.js              translates the shell, mounts the screen, loads the utils
     base.css             the plugin's structural stylesheet, lifted out of screen.html
     theme.css            the visual theme (palette, shapes, type) — light + dark
@@ -165,14 +166,33 @@ setup screen is outlined in warning colour and its button is the primary one.
 ## Theme
 
 `app/base.css` keeps every layout rule exactly as the plugin wrote it.
-`app/theme.css` repaints it: one bright accent, rounded type, chunky buttons and
-cards with a solid bottom edge that compresses on `:active`, thick pill progress
-bars, big answer targets. It works by remapping the plugin's own `--nt-*` design
-tokens and then overriding shape on the handful of components that carry the
-look, so the geometry stays in one place.
+`app/theme.css` repaints it: three section accents — coral for the time, cyan
+for the neck, violet for the ear — rounded type, chunky buttons and cards with a
+solid bottom edge that compresses on `:active`, thick pill progress bars, big
+answer targets. It works by remapping the plugin's own `--nt-*` design tokens
+and then overriding shape on the handful of components that carry the look, so
+the geometry stays in one place. `.interface-design/system.md` writes the rules
+down.
 
-Light by default, with a dark palette under `prefers-color-scheme: dark`, and
-motion dropped under `prefers-reduced-motion`.
+The page's top bar carries the identity — brand, the input pill with its signal
+dot, medal count, Exit, the palette switch, language and settings — so the
+screen below it is nothing but practice. `screen.js` resolves those elements by
+id wherever they sit, which is what lets them live in the page shell rather than
+in the mounted screen. The bar runs the full width; everything under it stops at
+1140px and sits in the middle.
+
+Each game shows the same two things: the studies you can pick, on the left, and
+the terms you set, on the right. The fret panel opens with the neck drawn out —
+the real fretboard renderer, showing the tuning currently chosen beside it — and
+the ear's three difficulty tiers are cards in the panel rather than a switch in
+the deck, because each of them keeps its own medal and best score, exactly like
+a fretboard level or a rhythm drill.
+
+`app/theme.js` runs from the document head, before the first paint, and stamps
+`data-theme` on `<html>`: the player's stored choice if there is one, the
+operating system's preference while there is not, so the switch in the top bar
+and the OS setting never fight. Motion is dropped under
+`prefers-reduced-motion`.
 
 The rhythm results card is ordered the way a teacher speaks rather than the way
 a report prints: medal, the three numbers that matter, one sentence on how the

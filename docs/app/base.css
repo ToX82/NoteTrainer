@@ -123,8 +123,12 @@
     .nt-gc-empty { font-size: 11px; color: var(--nt-faint); }
 
     .nt-game-panel { display: none; animation: nt-fade-in var(--nt-dur-base) var(--nt-ease); }
-    .note-trainer-root.is-game-fret #nt-panel-fret { display: block; }
-    .note-trainer-root.is-game-ear  #nt-panel-ear  { display: block; }
+    .note-trainer-root.is-game-fret #nt-panel-fret,
+    .note-trainer-root.is-game-fret #nt-deck-fret,
+    .note-trainer-root.is-game-fret #nt-tip-fret { display: block; }
+    .note-trainer-root.is-game-ear  #nt-panel-ear,
+    .note-trainer-root.is-game-ear  #nt-deck-ear,
+    .note-trainer-root.is-game-ear  #nt-tip-ear  { display: block; }
 
     .nt-setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 11px; }
     .nt-field { display: flex; flex-direction: column; gap: 5px; }
@@ -360,7 +364,9 @@
     .nt-stat.combo.is-blazing .nt-stat-val { color: var(--nt-err-edge); text-shadow: 0 0 10px rgba(248,113,113,0.5); }
 
     /* ── Rhythm training ───────────────────────────────────── */
-    .note-trainer-root.is-game-rhythm #nt-panel-rhythm { display: block; }
+    .note-trainer-root.is-game-rhythm #nt-panel-rhythm,
+    .note-trainer-root.is-game-rhythm #nt-deck-rhythm,
+    .note-trainer-root.is-game-rhythm #nt-tip-rhythm { display: block; }
     .nt-rhythm-setup { display: flex; flex-direction: column; gap: 12px; }
 
     /* Ten drills, one glance: a fixed 5-wide grid so they read as two rows of

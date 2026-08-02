@@ -5,16 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Note Trainer — Settings</title>
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#131f24" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F4F6F9">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app/page.css">
 <link rel="stylesheet" href="app/theme.css">
+<script src="app/theme.js"></script>
 </head>
-<body>
+<body class="nt-page-settings">
 
 <header class="nt-topbar">
-  <span class="nt-topbar-title" data-i18n="app.title">Note Trainer</span>
+  <a class="nt-topbar-brand" href="index.html" data-i18n-attr="title:app.tagline">
+    <span class="nt-topbar-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.5 3.2l-8 1.6V15a4 4 0 1 0 2 3.4V8.2l4-.8z"/></svg>
+    </span>
+    <span class="nt-topbar-name">
+      <b data-i18n="app.title">Note Trainer</b>
+      <span class="nt-topbar-edition"><span data-i18n="app.edition">Musician Edition</span></span>
+    </span>
+  </a>
+  <div class="nt-topbar-right">
+    <button type="button" class="nt-theme-toggle" id="nt-theme-toggle" data-i18n-attr="title:theme.toggle_title">
+      <span class="nt-theme-icon" aria-hidden="true"></span>
+      <span class="nt-theme-label"></span>
+    </button>
+  </div>
 </header>
 
 <main class="nt-settings-page">

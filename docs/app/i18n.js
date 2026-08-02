@@ -32,6 +32,10 @@
     const LOCALES = [
         { code: 'en', label: 'English' },
         { code: 'it', label: 'Italiano' },
+        { code: 'de', label: 'Deutsch' },
+        { code: 'fr', label: 'Français' },
+        { code: 'es', label: 'Español' },
+        { code: 'pt', label: 'Português' },
     ];
 
     let strings = {};        // active locale

@@ -6,25 +6,62 @@
 <title>Note Trainer</title>
 <meta name="description" content="Learn the notes on the guitar and bass fretboard, train your ear and your timing — your microphone checks every note in real time.">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#131f24" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F4F6F9">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎸</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app/page.css">
 <link rel="stylesheet" href="app/base.css">
 <link rel="stylesheet" href="app/theme.css">
+<script src="app/theme.js"></script>
 </head>
 <body>
 
 <!-- The plugin screen reserves 80px of top padding for the host's toolbar;
-     the standalone site puts its own bar there. -->
+     the standalone site puts its own bar there. The bar carries the identity
+     (brand, input, progress) so the screen below it can be all practice. -->
 <header class="nt-topbar">
-  <span class="nt-topbar-title" data-i18n="app.title">Note Trainer</span>
+  <a class="nt-topbar-brand" href="index.html" data-i18n-attr="title:app.tagline">
+    <span class="nt-topbar-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.5 3.2l-8 1.6V15a4 4 0 1 0 2 3.4V8.2l4-.8z"/></svg>
+    </span>
+    <span class="nt-topbar-name">
+      <b data-i18n="app.title">Note Trainer</b>
+      <span class="nt-topbar-edition"><span id="nt-version"></span><span data-i18n="app.edition">Musician Edition</span></span>
+    </span>
+  </a>
+
   <!-- The plugin's own <select id="nt-mic"> is moved in here by app/input.js,
        alongside the level meter: choosing the input is the first thing a player
        has to get right, so it lives in the chrome, not inside a setup grid. -->
-  <span id="nt-input" class="nt-input"><span class="nt-input-icon">🎙</span></span>
-  <span id="nt-lang" class="nt-lang"></span>
-  <a class="nt-topbar-link" href="settings.html" data-i18n="page.settings">Settings</a>
+  <span id="nt-input" class="nt-input"><span class="nt-input-dot" aria-hidden="true"></span></span>
+
+  <div class="nt-topbar-right">
+    <!-- Progress chips and the exit button belong to the screen's state but to
+         the page's chrome: screen.js finds them by id wherever they sit. -->
+    <div class="nt-global-progress" id="nt-ach-progress" data-i18n-attr="title:header.goals_title" style="display:none;">
+      <svg class="nt-ic is-fill" viewBox="0 0 24 24" style="color:var(--ms-gold);"><polygon points="12 2 15 9 22 9.3 16.5 14.2 18.3 21.5 12 17.5 5.7 21.5 7.5 14.2 2 9.3 9 9"/></svg>
+      <span><b id="nt-ach-count">0</b><span id="nt-ach-total">/12</span> <span data-i18n="header.goals">goals</span></span>
+    </div>
+    <div class="nt-global-progress" id="nt-global-progress" data-i18n-attr="title:header.medals_title">
+      <svg class="nt-ic" viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="M9 9L6 3"/><path d="M15 9l3-6"/></svg>
+      <span><b id="nt-medal-count">0</b> <span data-i18n="header.medals">medals</span></span>
+    </div>
+    <button class="nt-btn secondary nt-topbar-exit" id="nt-stop" style="display:none;">
+      <svg class="nt-ic" viewBox="0 0 24 24"><path d="M20 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      <span data-i18n="header.exit">Exit</span>
+    </button>
+
+    <button type="button" class="nt-theme-toggle" id="nt-theme-toggle" data-i18n-attr="title:theme.toggle_title">
+      <span class="nt-theme-icon" aria-hidden="true"></span>
+      <span class="nt-theme-label"></span>
+    </button>
+    <span id="nt-lang" class="nt-lang"></span>
+    <a class="nt-icon-btn" href="settings.html" data-i18n-attr="title:page.settings;aria-label:page.settings">
+      <svg class="nt-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+    </a>
+  </div>
 </header>
 
 <div id="nt-boot-status" class="nt-boot">

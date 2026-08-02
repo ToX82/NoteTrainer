@@ -2,22 +2,31 @@
    the plugin's own scoped stylesheet (screen.html) — these rules only cover the
    page shell around it, and deliberately reuse the same palette. */
 
+:root { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
 :root {
-  color-scheme: light dark;
   /* Fallbacks only: app/theme.css sets the real palette (and its dark variant)
      for both the page shell and the plugin screen. */
-  --nt-page-bg: #ffffff;
-  --nt-page-text: #3c3c3c;
-  --nt-page-muted: #777777;
-  --nt-page-line: #e5e5e5;
-  --nt-page-accent: #58cc02;
+  --nt-page-bg: #F4F6F9;
+  --nt-page-text: #0F172A;
+  --nt-page-muted: #64748B;
+  --nt-page-line: #E2E8F0;
+  --nt-page-accent: #00ACC1;
 }
 
 html, body {
   margin: 0;
+  height: 100%;
+  overflow: hidden;
   background: var(--nt-page-bg);
   color: var(--nt-page-text);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Settings (and any tall standalone page) may need the document to scroll. */
+body.nt-page-settings {
+  overflow: auto;
 }
 
 .nt-topbar {
@@ -30,27 +39,9 @@ html, body {
   gap: 16px;
   padding: 0 20px;
   box-sizing: border-box;
-  background: rgba(10, 11, 16, 0.86);
-  backdrop-filter: blur(8px);
+  background: var(--nt-page-bg);
   border-bottom: 1px solid var(--nt-page-line);
 }
-
-.nt-topbar-title {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.nt-topbar-link {
-  margin-left: auto;
-  color: var(--nt-page-muted);
-  font-size: 13px;
-  text-decoration: none;
-}
-
-.nt-topbar-link:hover,
-.nt-topbar-link:focus-visible { color: var(--nt-page-accent); }
 
 .nt-boot {
   padding: 120px 20px 20px;
@@ -65,7 +56,7 @@ html, body {
 .nt-settings-page {
   max-width: 680px;
   margin: 0 auto;
-  padding: 84px 20px 40px;
+  padding: 100px 20px 40px;
 }
 
 .nt-back {
