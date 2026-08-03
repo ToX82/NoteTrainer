@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate games/app/utils-manifest.js from games/screen.js.
+"""Regenerate docs/app/utils-manifest.js from docs/screen.js.
 
 screen.js loads its utilities by injecting <script> tags for URLs that only the
 original plugin backend ever served. The site loads the same files from local
@@ -32,7 +32,7 @@ def main() -> int:
 
     missing = [f for f in files if not (DOCS / "utils" / f).is_file()]
     if missing:
-        print("manifest: listed in screen.js but absent from games/utils/:")
+        print("manifest: listed in screen.js but absent from docs/utils/:")
         for f in missing:
             print("  " + f)
         return 1
@@ -44,9 +44,9 @@ def main() -> int:
         "window.noteTrainerUtils = " + json.dumps(files, indent=4) + ";\n",
         encoding="utf-8")
 
-    print(f"manifest: {len(files)} utils -> games/app/utils-manifest.js")
+    print(f"manifest: {len(files)} utils -> docs/app/utils-manifest.js")
     if orphans:
-        print("manifest: present in games/utils/ but never loaded: " + ", ".join(orphans))
+        print("manifest: present in docs/utils/ but never loaded: " + ", ".join(orphans))
     return 0
 
 

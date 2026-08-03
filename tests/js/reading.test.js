@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const R = require('../../games/utils/reading.js');
+const R = require('../../docs/utils/reading.js');
 
 // ── Diatonic pitch ────────────────────────────────────────────────────
 // The whole module rests on this: a note is a PLACE (diatonic index) that
@@ -565,7 +565,7 @@ test('a figure stays inside the study it illustrates', () => {
 // reading-levels.json is data, and data with a typo in it fails silently in a
 // browser: a card would simply show no picture. Checking it here is cheap.
 
-const STUDIES = require('../../games/data/reading-levels.json');
+const STUDIES = require('../../docs/data/reading-levels.json');
 
 test('every study is playable by one of the four answering kinds', () => {
     const kinds = ['contour', 'name', 'play', 'sight'];

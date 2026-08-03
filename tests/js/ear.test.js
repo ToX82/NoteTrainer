@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { createEar, TIERS } = require('../../games/utils/ear.js');
+const { createEar, TIERS } = require('../../docs/utils/ear.js');
 
 // Deterministic ear trainer rooted at C4. rng=0 -> always picks pool[0] (the
 // root, offset 0 = C, pitch class 0).
@@ -160,7 +160,7 @@ test('each pool entry carries the interval label matching its offset', () => {
     assert.equal(e.pool[1].interval.long, 'Major 3rd');
     assert.equal(e.pool[2].interval.long, 'Perfect 5th');
     // The interval offset equals the pool offset (root-relative distance).
-    e.pool.forEach(n => assert.equal(n.interval, require('../../games/utils/note-math.js').intervalName(n.offset)));
+    e.pool.forEach(n => assert.equal(n.interval, require('../../docs/utils/note-math.js').intervalName(n.offset)));
 });
 
 // ── A movable home note ───────────────────────────────────────────────

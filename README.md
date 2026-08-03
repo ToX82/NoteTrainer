@@ -16,14 +16,14 @@ theme with a dark variant.
 
 The screen and the engines were written against a small Python backend that
 served the JS files, returned two static JSON files and saved progress to disk.
-`games/app/shim.js` takes over all four jobs, so that code runs unchanged with no
+`docs/app/shim.js` takes over all four jobs, so that code runs unchanged with no
 server at all:
 
 | Original backend | Here |
 | --- | --- |
 | `GET/POST /config` | `localStorage` |
-| `GET /tunings` | `games/data/tunings.json` |
-| `GET /levels`, `/rhythm-levels`, `/reading-levels` | `games/data/*.json` |
+| `GET /tunings` | `docs/data/tunings.json` |
+| `GET /levels`, `/rhythm-levels`, `/reading-levels` | `docs/data/*.json` |
 | `GET /utils/*.js`, `/workers/*.js` | the same files, served next to the page |
 
 `screen.js` builds absolute URLs (`/api/plugins/note-trainer/…`). The shim patches
@@ -32,7 +32,7 @@ what makes the site work under a project subpath (`…github.io/<repo>/`) as wel
 as at a domain root.
 
 ```
-games/                    the published site
+docs/                    the published site
   index.html             page shell — mounts the plugin screen
   settings.html          page shell — mounts the plugin settings panel
   app/
@@ -54,7 +54,7 @@ tools/
 
 ## Translations
 
-**Format: one flat JSON file per locale** under `games/i18n/`, keys dotted by
+**Format: one flat JSON file per locale** under `docs/i18n/`, keys dotted by
 area (`"rhythm.tempo_ceiling"`). Flat JSON diffs cleanly, makes a missing key
 obvious and needs no compile step — a gettext/`.po` pipeline would need exactly
 the build this site does without. The runtime is ~150 lines and does the three
@@ -107,8 +107,8 @@ carries no meaning on its own it gets a hint — *Tresillo (3-3-2)*.
 
 ### Adding a language
 
-1. Copy `games/i18n/en.json` to `games/i18n/<code>.json` and translate the values.
-2. Add `{ code: '<code>', label: '<name>' }` to `LOCALES` in `games/app/i18n.js`.
+1. Copy `docs/i18n/en.json` to `docs/i18n/<code>.json` and translate the values.
+2. Add `{ code: '<code>', label: '<name>' }` to `LOCALES` in `docs/app/i18n.js`.
 3. Run `python3 tools/check-i18n.py`.
 
 The check reports keys used by the code but missing from `en.json`, keys nothing
@@ -248,12 +248,12 @@ gate: the judging window is a whole beat wide.
 ### The two new modules
 
 ```
-games/utils/reading.js   the engine: diatonic maths, clefs, key signatures,
+docs/utils/reading.js   the engine: diatonic maths, clefs, key signatures,
                         question generation, scoring, sight-reading phrases,
                         teaching figures
-games/utils/staff.js     the renderer: staff, clefs, noteheads, stems, flags,
+docs/utils/staff.js     the renderer: staff, clefs, noteheads, stems, flags,
                         ledger lines, accidentals, barlines, playhead
-games/data/reading-levels.json   the ten studies and their explanation cards
+docs/data/reading-levels.json   the ten studies and their explanation cards
 ```
 
 `reading.js` stores a note as `{ step, octave, alter }` and derives MIDI from
@@ -272,7 +272,7 @@ The renderer knows nothing about pitch — only about where to put ink.
 
 ## Rhythm studies
 
-The order of `games/data/rhythm-levels.json` **is** the ladder: the panel renders
+The order of `docs/data/rhythm-levels.json` **is** the ladder: the panel renders
 the file as it stands and numbers each card by its position. Ids are identity —
 medals and best scores live under `rhythm:<id>` — so they never move, which is
 what lets the order be rewritten without erasing anyone's progress.
@@ -366,18 +366,18 @@ in the way of the part a player actually reads.
 
 ## Maintenance
 
-Everything under `games/` is the app's own source now — edit it in place. Two
+Everything under `docs/` is the app's own source now — edit it in place. Two
 scripts keep the parts that must agree from drifting:
 
 ```sh
-npm test                      # 125 cases over the game logic in games/utils
+npm test                      # 125 cases over the game logic in docs/utils
 python3 tools/check-i18n.py   # every string declared, used and translated
 python3 tools/manifest.py     # regenerate the util list read out of screen.js
 ```
 
 `npm run check` runs the first two together. Run `manifest.py` only after adding,
 removing or reordering a `_loadScript` call in `screen.js`; it also reports any
-file in `games/utils/` that nothing loads.
+file in `docs/utils/` that nothing loads.
 
 The test suite came from the original plugin and still covers the parts worth
 covering — note maths, the game and ear engines, rhythm building and judging,
@@ -403,10 +403,10 @@ microphone works there without HTTPS.
    folder `/docs`.
 3. The site appears at `https://<user>.github.io/<repo>/`.
 
-No workflow or build is needed — GitHub serves `games/` as-is (`.nojekyll` skips
+No workflow or build is needed — GitHub serves `docs/` as-is (`.nojekyll` skips
 the Jekyll pass). Pages is HTTPS-only, which is what `getUserMedia` requires.
 
-The whole project is four directories and two files — `games/` is the site,
+The whole project is four directories and two files — `docs/` is the site,
 `tests/` and `tools/` are the checks, `package.json` and this README. Nothing is
 generated at deploy time, so what you push is exactly what runs.
 

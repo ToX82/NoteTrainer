@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const m = require('../../games/utils/note-math.js');
+const m = require('../../docs/utils/note-math.js');
 
 // Standard 6-string guitar open strings (Hz) -> known MIDI.
 const GUITAR6_HZ = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];

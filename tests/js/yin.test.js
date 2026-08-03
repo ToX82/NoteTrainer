@@ -4,7 +4,7 @@
 // pitch and rejects silence. (Full coverage lives in the tuner plugin.)
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { _yinDetect } = require('../../games/workers/yin.js');
+const { _yinDetect } = require('../../docs/workers/yin.js');
 
 const SAMPLE_RATE = 44100;
 const FRAME = 4096;

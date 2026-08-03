@@ -211,12 +211,12 @@ Musician-facing Italian first in the mockup; EN mirrors the same roles.
 
 ## Files
 
-- Paint: `games/app/theme.css`
-- Palette switch: `games/app/theme.js`
-- Page chrome: `games/app/page.css` + `games/index.html` (top bar)
-- Structure: `games/app/base.css` + `games/screen.html` (fetched at boot by `games/app/boot.js`)
-- Copy: `games/i18n/it.json`, `games/i18n/en.json`
-- Mockup reference: `games/revamp.html`
+- Paint: `docs/app/theme.css`
+- Palette switch: `docs/app/theme.js`
+- Page chrome: `docs/app/page.css` + `docs/index.html` (top bar)
+- Structure: `docs/app/base.css` + `docs/screen.html` (fetched at boot by `docs/app/boot.js`)
+- Copy: `docs/i18n/it.json`, `docs/i18n/en.json`
+- Mockup reference: `docs/revamp.html`
 
 `.nt-levels` is a flex row in `base.css`, which lets the last card on a line grow to fill it; `theme.css` re-lays it (and the rhythm / ear / reading grids) as `auto-fill` so every study is the same size. Keep it that way when adding a card type.
 
