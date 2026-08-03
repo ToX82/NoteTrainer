@@ -1,7 +1,7 @@
 # Note Trainer
 
 A static web app: plain HTML + client-side JavaScript, no build step, no server.
-It runs on GitHub Pages.
+You can use it here: [https://tox82.github.io/NoteTrainer/](https://tox82.github.io/NoteTrainer/).
 
 It began as a Slopsmith plugin — which is why the screen and the game engines
 still carry that shape — but the plugin is no longer part of this project, and
