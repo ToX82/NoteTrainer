@@ -3,10 +3,6 @@
 A static web app: plain HTML + client-side JavaScript, no build step, no server.
 You can use it here: [https://tox82.github.io/NoteTrainer/](https://tox82.github.io/NoteTrainer/).
 
-It began as a Slopsmith plugin — which is why the screen and the game engines
-still carry that shape — but the plugin is no longer part of this project, and
-nothing here depends on it.
-
 Practice the notes on the guitar/bass fretboard, train your ear and your timing,
 and learn to read the staff; the microphone judges every note in real time.
 Fully translatable (English and Italian ship with it), in a bright game-style
@@ -14,39 +10,38 @@ theme with a dark variant.
 
 ## How it works
 
-The screen and the engines were written against a small Python backend that
-served the JS files, returned two static JSON files and saved progress to disk.
-`docs/app/shim.js` takes over all four jobs, so that code runs unchanged with no
-server at all:
+The page mounts one self-contained screen — `docs/screen.html` and
+`docs/screen.js` — that carries the four games, and `docs/app/shim.js` gives it
+everything it needs to run with no server at all:
 
-| Original backend | Here |
-| --- | --- |
-| `GET/POST /config` | `localStorage` |
-| `GET /tunings` | `docs/data/tunings.json` |
-| `GET /levels`, `/rhythm-levels`, `/reading-levels` | `docs/data/*.json` |
-| `GET /utils/*.js`, `/workers/*.js` | the same files, served next to the page |
+- **Progress and settings** live in `localStorage` under
+  `note_trainer_progress`. It is per-browser: it does not follow you across
+  devices, and clearing site data clears it.
+- **Tunings, levels, rhythm levels and reading levels** are the static JSON
+  files under `docs/data/`.
+- **Utils and workers** are plain files served next to the page.
 
-`screen.js` builds absolute URLs (`/api/plugins/note-trainer/…`). The shim patches
+Those resources are requested by absolute path, so the shim patches
 `window.fetch` and `window.Worker` to remap them relative to the page, which is
 what makes the site work under a project subpath (`…github.io/<repo>/`) as well
 as at a domain root.
 
 ```
 docs/                    the published site
-  index.html             page shell — mounts the plugin screen
-  settings.html          page shell — mounts the plugin settings panel
+  index.html             page shell — mounts the practice screen
+  settings.html          page shell — mounts the settings panel
   app/
     i18n.js              translation runtime (T(), data-i18n, plurals)
-    shim.js              stands in for the backend
+    shim.js              storage, static data and URL resolution
     theme.js             light/dark switch, loaded from the head before paint
     boot.js              translates the shell, mounts the screen, loads the utils
-    base.css             the plugin's structural stylesheet, lifted out of screen.html
+    base.css             structural stylesheet for the mounted screen
     theme.css            the visual theme (palette, shapes, type) — light + dark
     page.css             page chrome around the mounted screen
     utils-manifest.js    generated: the util list read out of screen.js
   i18n/en.json it.json   one flat file per locale
   screen.html screen.js utils/ workers/ data/
-tests/js/                171 cases over the game logic, run with `npm test`
+tests/js/                219 cases over the game logic, run with `npm test`
 tools/
   check-i18n.py          verifies every string is declared, used and translated
   manifest.py            regenerates the util list read out of screen.js
@@ -127,10 +122,10 @@ lives in `localStorage` and is untouched.
 Choosing the audio input is the first thing that has to be right — a player with
 a guitar plugged into an interface has to pick that interface, or the app hears
 nothing — so the picker sits in the top bar next to language and settings rather
-than inside the setup grid. It is the plugin's own `<select id="nt-mic">`, moved
-there rather than duplicated: `screen.js` still reads it exactly as before
+than inside the setup grid. It is the screen's own `<select id="nt-mic">`, moved
+there rather than duplicated: `screen.js` reads it wherever it sits
 (`utils/ui.js` resolves ids outside the mounted root too), and the chosen device
-is stored under the key the plugin already uses.
+is stored under the same key.
 
 Next to it, `app/input.js` adds:
 
@@ -324,13 +319,13 @@ setup screen is outlined in warning colour and its button is the primary one.
 
 ## Theme
 
-`app/base.css` keeps every layout rule exactly as the plugin wrote it.
-`app/theme.css` repaints it: four section accents — coral for the time, cyan
-for the neck, violet for the ear, amber for the page — rounded type, chunky
-buttons and cards with a solid bottom edge that compresses on `:active`, thick
-pill progress bars, big answer targets. It works by remapping the plugin's own `--nt-*` design tokens
-and then overriding shape on the handful of components that carry the look, so
-the geometry stays in one place. `.interface-design/system.md` writes the rules
+`app/base.css` holds every structural layout rule; `app/theme.css` repaints it:
+four section accents — coral for the time, cyan for the neck, violet for the
+ear, amber for the page — rounded type, chunky buttons and cards with a solid
+bottom edge that compresses on `:active`, thick pill progress bars, big answer
+targets. It works by remapping the `--nt-*` design tokens and then overriding
+shape on the handful of components that carry the look, so the geometry stays
+in one place. `.interface-design/system.md` writes the rules
 down.
 
 The page's top bar carries the identity — brand, the input pill with its signal
@@ -366,11 +361,11 @@ in the way of the part a player actually reads.
 
 ## Maintenance
 
-Everything under `docs/` is the app's own source now — edit it in place. Two
-scripts keep the parts that must agree from drifting:
+Everything under `docs/` is the app's source — edit it in place. Two scripts
+keep the parts that must agree from drifting:
 
 ```sh
-npm test                      # 125 cases over the game logic in docs/utils
+npm test                      # 219 cases over the game logic in docs/utils
 python3 tools/check-i18n.py   # every string declared, used and translated
 python3 tools/manifest.py     # regenerate the util list read out of screen.js
 ```
@@ -379,10 +374,10 @@ python3 tools/manifest.py     # regenerate the util list read out of screen.js
 removing or reordering a `_loadScript` call in `screen.js`; it also reports any
 file in `docs/utils/` that nothing loads.
 
-The test suite came from the original plugin and still covers the parts worth
-covering — note maths, the game and ear engines, rhythm building and judging,
-onset detection, achievements, YIN pitch detection, and the reading engine's
-diatonic maths — running directly against the files the site ships.
+The suite covers the parts worth covering — note maths, the game and ear
+engines, rhythm building and judging, onset detection, achievements, YIN pitch
+detection, and the reading engine's diatonic maths — running directly against
+the files the site ships.
 
 ## Running locally
 
@@ -409,17 +404,6 @@ the Jekyll pass). Pages is HTTPS-only, which is what `getUserMedia` requires.
 The whole project is four directories and two files — `docs/` is the site,
 `tests/` and `tools/` are the checks, `package.json` and this README. Nothing is
 generated at deploy time, so what you push is exactly what runs.
-
-## Differences from the plugin
-
-- **Progress is per-browser.** It lives in `localStorage` under
-  `note_trainer_progress` instead of a file on the host, so it does not follow
-  you across devices, and clearing site data clears it.
-- **No desktop audio bridge.** `utils/audio.js` looks for the JUCE bridge first
-  and falls back to `getUserMedia`; in a browser there is no bridge, so the
-  fallback is always the path taken.
-- **No host navigation.** The plugin tears its audio down when you leave its
-  screen; here, closing or reloading the tab does that.
 
 ## Browser notes
 
