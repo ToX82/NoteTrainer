@@ -102,6 +102,23 @@
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S.mic)); } catch (_) {}
     }
 
+    // The device picker lives in the page's top bar and can be changed at any
+    // moment, so every path that opens the microphone has to read it — not the
+    // value that happened to be stored when the page loaded. Only start() did,
+    // which left the rhythm game, the reading studies and the latency
+    // calibration opening whichever device was current at boot: a player who
+    // switched to their interface got a working meter (it follows the picker)
+    // and a game listening to the wrong input.
+    // The picker is ignored while it has no options — it is repopulated
+    // asynchronously, and an empty one means "not known yet", not "default".
+    function syncMicDevice() {
+        const sel = S.ui.$('nt-mic');
+        if (!sel || !sel.options.length) return;
+        if (sel.value === S.mic.deviceId) return;
+        S.mic.deviceId = sel.value;
+        saveMicSettings();
+    }
+
     // Persist a progress patch. Serialized through a single chain so two saves
     // fired back-to-back (e.g. finishEar() then recordSession(), each sending a
     // different subset of keys) can't race the server's read-merge-rewrite and
@@ -597,8 +614,7 @@
         const tuningName = S.ui.$('nt-tuning').value;
         const noteSet = S.ui.$('nt-noteset').value;
         S.mode = S.ui.$('nt-mode').value;
-        S.mic.deviceId = S.ui.$('nt-mic').value;
-        saveMicSettings();
+        syncMicDevice();
 
         const freqs = (S.tunings[inst] || {})[tuningName];
         if (!freqs) return;
@@ -1661,6 +1677,7 @@
         // answered with buttons would ask for a permission the player does not
         // need and cannot use.
         if (lv.kind === 'play') {
+            syncMicDevice();
             try {
                 await window._noteTrainerAudio.start({
                     deviceId: S.mic.deviceId, channel: S.mic.channel,
@@ -2042,6 +2059,7 @@
         // for — the seconds a device takes to open are seconds to look ahead in.
         readingHud();
 
+        syncMicDevice();
         try {
             await window._noteTrainerAudio.start({
                 deviceId: S.mic.deviceId, channel: S.mic.channel,
@@ -2571,6 +2589,7 @@
         S.rhythmView.reset();
         S.rhythmView.resize();
 
+        syncMicDevice();
         try {
             await window._noteTrainerAudio.start({
                 deviceId: S.mic.deviceId, channel: S.mic.channel,
@@ -3212,6 +3231,7 @@
         const bar = S.ui.$('nt-calib-prog');
         if (bar) { bar.style.display = ''; bar.firstElementChild.style.width = '0%'; }
 
+        syncMicDevice();
         try {
             await window._noteTrainerAudio.start({
                 deviceId: S.mic.deviceId, channel: S.mic.channel,

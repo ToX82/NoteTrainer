@@ -246,6 +246,13 @@
         try {
             _stream = await navigator.mediaDevices.getUserMedia(constraints);
         } catch (e) {
+            // Dropping the constraint opens SOME device, which is better than
+            // failing — but it may not be the one the player chose, and a
+            // silent swap looks exactly like "the app stopped hearing me".
+            if (deviceId && (e.name === 'OverconstrainedError' || e.name === 'NotFoundError')) {
+                console.warn('[note-trainer] requested input device unavailable ('
+                    + e.name + ') — falling back to the system default');
+            }
             if (e.name === 'OverconstrainedError' && deviceId) {
                 delete constraints.audio.deviceId;
                 delete constraints.audio.channelCount;

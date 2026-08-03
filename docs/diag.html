@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Note Trainer — diagnostica ingresso audio</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font: 15px/1.5 system-ui, sans-serif; background: #14161c; color: #e8eaf0;
+         margin: 0; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.lead { color: #98a0b3; margin: 0 0 20px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  select, button { font: inherit; padding: 7px 12px; border-radius: 8px;
+                   border: 1px solid #333a49; background: #1e222c; color: inherit; }
+  button { cursor: pointer; }
+  button.go { background: #3d6bff; border-color: #3d6bff; }
+  table { border-collapse: collapse; width: 100%; max-width: 720px; }
+  td, th { text-align: left; padding: 6px 10px; border-bottom: 1px solid #262b36; }
+  th { color: #98a0b3; font-weight: 500; width: 45%; }
+  .num { font-variant-numeric: tabular-nums; }
+  .ok { color: #46d18a; } .bad { color: #ff6b6b; } .warn { color: #ffb020; }
+  .meter { height: 12px; background: #21252f; border-radius: 6px; overflow: hidden;
+           max-width: 720px; margin: 6px 0 14px; }
+  .meter i { display: block; height: 100%; width: 0; background: #46d18a; }
+  pre { background: #1a1e27; padding: 12px; border-radius: 8px; max-width: 720px;
+        overflow: auto; font-size: 13px; }
+  .verdict { max-width: 720px; padding: 12px 14px; border-radius: 8px;
+             background: #1a1e27; margin: 16px 0; }
+</style>
+</head>
+<body>
+<h1>Diagnostica ingresso audio</h1>
+<p class="lead">Apre il microfono <em>esattamente</em> come fa il gioco e mostra cosa vede
+la catena di rilevamento. Suona qualche nota mentre gira.</p>
+
+<div class="row">
+  <select id="dev"></select>
+  <select id="chan">
+    <option value="mono">mono (mix)</option>
+    <option value="left">solo sinistro</option>
+    <option value="right">solo destro</option>
+  </select>
+  <button class="go" id="start">Avvia</button>
+  <button id="stop">Ferma</button>
+</div>
+
+<div class="meter"><i id="bar"></i></div>
+<table>
+  <tr><th>Dispositivo aperto</th><td id="t-label">—</td></tr>
+  <tr><th>Sample rate / canali</th><td id="t-fmt">—</td></tr>
+  <tr><th>RMS attuale</th><td class="num" id="t-rms">—</td></tr>
+  <tr><th>RMS di picco (dall'avvio)</th><td class="num" id="t-peak">—</td></tr>
+  <tr><th>RMS canale L / R</th><td class="num" id="t-lr">—</td></tr>
+  <tr><th>Soglia pitch (RMS &gt; 0.01)</th><td id="t-gate-pitch">—</td></tr>
+  <tr><th>Soglia onset (RMS &gt; 0.006)</th><td id="t-gate-onset">—</td></tr>
+  <tr><th>Blocchi audio ricevuti</th><td class="num" id="t-blocks">0</td></tr>
+  <tr><th>Nota rilevata (YIN)</th><td class="num" id="t-freq">—</td></tr>
+  <tr><th>Attacchi rilevati (onset)</th><td class="num" id="t-onsets">0</td></tr>
+</table>
+
+<div class="verdict" id="verdict">In attesa…</div>
+<pre id="log"></pre>
+
+<script src="utils/onset.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const S = { ctx: null, stream: null, proc: null, det: null, worker: null,
+              peak: 0, blocks: 0, onsets: 0, busy: false, freq: 0, rmsL: 0, rmsR: 0 };
+  const lines = [];
+  function log(s) {
+    lines.unshift(new Date().toLocaleTimeString() + '  ' + s);
+    $('log').textContent = lines.slice(0, 14).join('\n');
+  }
+
+  async function listDevices() {
+    let devs = [];
+    try { devs = await navigator.mediaDevices.enumerateDevices(); } catch (_) {}
+    const sel = $('dev');
+    sel.innerHTML = '<option value="">(predefinito di sistema)</option>';
+    devs.filter(d => d.kind === 'audioinput').forEach((d, i) => {
+      const o = document.createElement('option');
+      o.value = d.deviceId;
+      o.textContent = d.label || ('Ingresso ' + (i + 1));
+      sel.appendChild(o);
+    });
+    // Mostra anche il dispositivo che l'app ha memorizzato: è quello che il
+    // gioco riapre, e può non essere quello scelto nella barra in alto.
+    try {
+      const s = JSON.parse(localStorage.getItem('slopsmith_note_trainer_settings') || '{}');
+      log('impostazioni salvate dall\'app: ' + JSON.stringify(s));
+      if (s.deviceId && devs.some(d => d.deviceId === s.deviceId)) sel.value = s.deviceId;
+      if (s.channel) $('chan').value = s.channel;
+    } catch (_) {}
+  }
+
+  async function start() {
+    stop();
+    const deviceId = $('dev').value;
+    const channel = $('chan').value;
+    const constraints = { audio: { echoCancellation: false, noiseSuppression: false,
+                                   autoGainControl: false, channelCount: 2 } };
+    if (deviceId) constraints.audio.deviceId = { exact: deviceId };
+    try {
+      S.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (e) {
+      log('getUserMedia FALLITO: ' + e.name + ' — ' + e.message);
+      try {
+        delete constraints.audio.deviceId; delete constraints.audio.channelCount;
+        S.stream = await navigator.mediaDevices.getUserMedia(constraints);
+        log('ripiego riuscito sul dispositivo PREDEFINITO (come fa audio.js)');
+      } catch (e2) { log('anche il ripiego è fallito: ' + e2.name); return; }
+    }
+
+    const track = S.stream.getAudioTracks()[0];
+    const st = track.getSettings();
+    $('t-label').textContent = track.label || '(senza nome)';
+    log('aperto: ' + track.label + ' | id=' + (st.deviceId || '').slice(0, 12) + '…');
+
+    S.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (S.ctx.state === 'suspended') await S.ctx.resume();
+    const src = S.ctx.createMediaStreamSource(S.stream);
+    $('t-fmt').textContent = S.ctx.sampleRate + ' Hz · ' + src.channelCount + ' canali'
+      + ' · contesto: ' + S.ctx.state;
+
+    // Analisi per canale: se la chitarra entra solo su un ingresso, si vede qui.
+    const split = S.ctx.createChannelSplitter(2);
+    src.connect(split);
+    const anL = S.ctx.createAnalyser(), anR = S.ctx.createAnalyser();
+    anL.fftSize = anR.fftSize = 1024;
+    split.connect(anL, 0, 0);
+    try { split.connect(anR, 1, 0); } catch (_) {}
+    const bufL = new Float32Array(1024), bufR = new Float32Array(1024);
+
+    // Stessa catena di utils/audio.js: gain -> (splitter se non mono) -> processor.
+    const gain = S.ctx.createGain();
+    if (src.channelCount >= 2 && channel !== 'mono') {
+      const sp = S.ctx.createChannelSplitter(2), mg = S.ctx.createChannelMerger(1);
+      src.connect(sp);
+      sp.connect(mg, channel === 'left' ? 0 : 1, 0);
+      mg.connect(gain);
+    } else {
+      src.connect(gain);
+    }
+    S.proc = S.ctx.createScriptProcessor(2048, 1, 1);
+    gain.connect(S.proc);
+    S.proc.connect(S.ctx.destination);
+
+    S.det = window._noteTrainerOnset.createOnsetDetector({ sampleRate: S.ctx.sampleRate });
+    S.worker = new Worker('workers/yin.js');
+    S.worker.onmessage = (e) => {
+      S.busy = false;
+      const r = e.data;
+      $('t-freq').textContent = (r && r.freq)
+        ? r.freq.toFixed(1) + ' Hz (confidenza ' + r.confidence.toFixed(2) + ')'
+        : '— (nessun pitch: rms ' + (r ? r.rms.toFixed(4) : '?') + ')';
+    };
+    S.worker.onerror = (e) => log('WORKER YIN IN ERRORE: ' + e.message);
+
+    let accum = new Float32Array(0);
+    S.proc.onaudioprocess = (e) => {
+      const input = e.inputBuffer.getChannelData(0);
+      S.blocks++;
+      const times = S.det.push(input, performance.now());
+      S.onsets += times.length;
+      let sum = 0;
+      for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
+      const rms = Math.sqrt(sum / input.length);
+      if (rms > S.peak) S.peak = rms;
+      S.rms = rms;
+
+      const comb = new Float32Array(accum.length + input.length);
+      comb.set(accum); comb.set(input, accum.length);
+      if (comb.length >= 4096) {
+        accum = comb.slice(input.length);
+        if (!S.busy) {
+          S.busy = true;
+          const f = comb.slice(comb.length - 4096);
+          S.worker.postMessage({ samples: f, sampleRate: S.ctx.sampleRate }, [f.buffer]);
+        }
+      } else accum = comb;
+    };
+
+    function rmsOf(an, buf) {
+      an.getFloatTimeDomainData(buf);
+      let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
+      return Math.sqrt(s / buf.length);
+    }
+    (function draw() {
+      if (!S.ctx) return;
+      S.raf = requestAnimationFrame(draw);
+      const rms = S.rms || 0;
+      S.rmsL = rmsOf(anL, bufL); S.rmsR = rmsOf(anR, bufR);
+      const db = 20 * Math.log10(rms || 1e-6);
+      $('bar').style.width = Math.max(0, Math.min(100, (db + 60) * (100 / 60))) + '%';
+      $('t-rms').textContent = rms.toFixed(4) + '  (' + db.toFixed(1) + ' dB)';
+      $('t-peak').textContent = S.peak.toFixed(4) + '  ('
+        + (20 * Math.log10(S.peak || 1e-6)).toFixed(1) + ' dB)';
+      $('t-lr').textContent = S.rmsL.toFixed(4) + ' / ' + S.rmsR.toFixed(4);
+      $('t-blocks').textContent = S.blocks;
+      $('t-onsets').textContent = S.onsets;
+      mark('t-gate-pitch', S.peak > 0.01);
+      mark('t-gate-onset', S.peak > 0.006);
+      verdict();
+    })();
+  }
+
+  function mark(id, pass) {
+    const el = $(id);
+    el.textContent = pass ? 'superata ✓' : 'NON superata ✗';
+    el.className = pass ? 'ok' : 'bad';
+  }
+
+  function verdict() {
+    const v = $('verdict');
+    if (!S.blocks) {
+      v.innerHTML = '<b class="bad">Nessun blocco audio arriva alla catena.</b> '
+        + 'Il microfono è aperto ma lo ScriptProcessor non riceve nulla.';
+    } else if (S.peak < 0.006) {
+      v.innerHTML = '<b class="bad">Livello troppo basso.</b> Il picco è '
+        + S.peak.toFixed(4) + ', sotto la soglia minima (0.006) del rilevatore di '
+        + 'attacchi e sotto quella del pitch (0.01). La barra in alto usa una scala '
+        + 'in dB e si muove comunque: per questo sembra che senta. Alza il guadagno '
+        + 'dell\'ingresso (interfaccia o impostazioni audio di sistema).';
+    } else if (S.peak < 0.01) {
+      v.innerHTML = '<b class="warn">Livello marginale.</b> Picco ' + S.peak.toFixed(4)
+        + ': basta per gli attacchi ma non per il riconoscimento della nota (serve &gt; 0.01).';
+    } else if (S.rmsL > 0.01 && S.rmsR < 0.001) {
+      v.innerHTML = '<b class="warn">Segnale solo sul canale sinistro.</b> '
+        + 'Se nelle impostazioni il canale è "destro", il gioco ascolta il silenzio.';
+    } else {
+      v.innerHTML = '<b class="ok">Catena a posto.</b> Livello sufficiente, '
+        + S.onsets + ' attacchi rilevati. Se il gioco non sente, apre un dispositivo diverso '
+        + 'da questo: confronta il nome qui sopra con quello scelto nella barra dell\'app.';
+    }
+  }
+
+  function stop() {
+    if (S.raf) cancelAnimationFrame(S.raf);
+    if (S.proc) { S.proc.onaudioprocess = null; S.proc.disconnect(); S.proc = null; }
+    if (S.worker) { S.worker.terminate(); S.worker = null; }
+    if (S.stream) { S.stream.getTracks().forEach(t => t.stop()); S.stream = null; }
+    if (S.ctx) { S.ctx.close(); S.ctx = null; }
+    S.peak = 0; S.blocks = 0; S.onsets = 0; S.rms = 0;
+  }
+
+  $('start').addEventListener('click', () => start().catch(e => log('errore: ' + e.message)));
+  $('stop').addEventListener('click', stop);
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(s => { s.getTracks().forEach(t => t.stop()); return listDevices(); })
+    .catch(() => listDevices());
+})();
+</script>
+</body>
+</html>
