@@ -418,6 +418,9 @@
     .note-trainer-root.is-rhythm #nt-rhythm { display: flex; animation: nt-shell-in var(--nt-dur-slow) var(--nt-ease); }
     .note-trainer-root.is-rhythm #nt-setup { display: none; }
     .nt-rhythm-canvas { width: 100%; display: block; border-radius: var(--nt-r-sm); }
+    .nt-rhythm-sheet { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; }
+    .nt-rhythm-sheet:empty { display: none; }
+    .nt-rhythm-preview { margin-top: 12px; }
     @media (prefers-reduced-motion: reduce) { .note-trainer-root.is-rhythm #nt-rhythm { animation: none; } }
 
     /* ── Play view: reading the staff ──────────────────────── */
@@ -443,6 +446,8 @@
     .nt-read-heard { min-height: 18px; font-size: 12.5px; color: var(--nt-muted); }
     .nt-read-choices { display: flex; flex-wrap: wrap; justify-content: center; }
     .nt-read-hint:empty { display: none; }
+    .nt-read-after { display: none; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .nt-read-after.is-open { display: flex; }
     .nt-read-neck:empty { display: none; }
     .nt-read-neck { width: 100%; }
 

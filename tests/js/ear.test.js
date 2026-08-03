@@ -162,3 +162,40 @@ test('each pool entry carries the interval label matching its offset', () => {
     // The interval offset equals the pool offset (root-relative distance).
     e.pool.forEach(n => assert.equal(n.interval, require('../../docs/utils/note-math.js').intervalName(n.offset)));
 });
+
+// ── A movable home note ───────────────────────────────────────────────
+// Relative pitch is about distances, so the anchor has to be able to move —
+// and everything downstream is keyed by OFFSET from it, not by pitch class,
+// which is what lets a player's record survive the change.
+
+test('the pool is built from the chosen root, not from C', () => {
+    const e = createEar({ rootMidi: 62, tier: 'easy', rounds: 3, rng: () => 0 });  // D4
+    assert.equal(e.rootName, 'D');
+    assert.deepEqual(e.pool.map(n => n.name), ['D', 'F#', 'A']);
+    assert.deepEqual(e.pool.map(n => n.offset), [0, 4, 7]);
+    assert.deepEqual(e.pool.map(n => n.midi), [62, 66, 69]);
+});
+
+test('the interval a note carries is its distance from the root', () => {
+    const e = createEar({ rootMidi: 67, tier: 'easy', rounds: 3, rng: () => 0 });  // G4
+    assert.deepEqual(e.pool.map(n => n.interval.abbr), ['P1', 'M3', 'P5']);
+});
+
+test('per-interval stats stay comparable across roots', () => {
+    // The same third, from two different anchors, lands in the same bucket.
+    const a = createEar({ rootMidi: 60, tier: 'easy', rounds: 3, rng: () => 0.5 });
+    const b = createEar({ rootMidi: 65, tier: 'easy', rounds: 3, rng: () => 0.5 });
+    const ta = a.nextRound(), tb = b.nextRound();
+    assert.equal(ta.offset, tb.offset);
+    a.guess(ta.pc); b.guess(tb.pc);
+    assert.deepEqual(Object.keys(a.state.stats), Object.keys(b.state.stats));
+});
+
+test('a guess is judged against the root that is actually playing', () => {
+    const e = createEar({ rootMidi: 65, tier: 'easy', rounds: 3, rng: () => 0 });  // F4
+    const t = e.nextRound();
+    assert.equal(t.pc, 5);                       // F, the root itself
+    assert.equal(e.guess(5).correct, true);
+    e.nextRound();
+    assert.equal(e.guess(0).correct, false);     // C is no longer the answer
+});

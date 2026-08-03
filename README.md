@@ -214,6 +214,19 @@ Taking one costs what a second attempt costs (half the round), which is
 recorded in the engine so scoring stays in one place. Sight-reading has no
 hint: the line does not wait.
 
+### After a mistake
+
+A right answer moves on by itself. A wrong one does not: the correction — the
+note in red, the answer ghosted beside it, the neck underneath — stays on
+screen with **Try this one again** and **Continue** beneath it. On a timer
+nobody finishes reading a correction, which is the one moment in the study
+where reading matters most.
+
+*Try this one again* calls `repeatRound()`: the same question comes back, and
+because the round has already been recorded, the repeat scores nothing and
+touches neither the streak nor the per-position record. It is practice, and it
+is honest about being practice.
+
 Two facts about fretted instruments are baked in and must not drift: guitar and
 bass are both written an **octave above** what they sound (`OCTAVE_SHIFT`), and
 the clef follows the instrument (`clefForInstrument`) unless the deck overrides
@@ -256,6 +269,47 @@ font coverage, and an embedded music font would be a megabyte of asset for two
 shapes. A notation library was rejected for the reason everything else here is
 hand-rolled: it would need the build step this site deliberately does without.
 The renderer knows nothing about pitch — only about where to put ink.
+
+## Rhythm studies
+
+The order of `docs/data/rhythm-levels.json` **is** the ladder: the panel renders
+the file as it stands and numbers each card by its position. Ids are identity —
+medals and best scores live under `rhythm:<id>` — so they never move, which is
+what lets the order be rewritten without erasing anyone's progress.
+
+The curve, the way a method book builds one: density first (pulse → held
+eighths → mixed → rests → held sixteenths → mixed → triplets → held
+thirty-seconds), then the subdivision ladder as a summary, then a fixed
+syncopated figure, and finally the metronome's support taken away a piece at a
+time — 2 and 4, then the upbeats, then nothing. Raw density is deliberately not
+the only axis: a triplet is three to a beat where a sixteenth is four, so it
+reads as coarser while being the harder idea, and it comes after.
+
+The **held-value** studies (`kind: 'ladder'` with a single step and
+`updown: false`) hold one value from the first bar to the last. Nothing changes
+to hide a drift behind, which is the whole exercise. Their tempo ceiling is
+computed from their own density, so thirty-seconds cap at 107 BPM — the point
+where two attacks are 70ms apart and the onset detector can still tell them
+apart.
+
+### Printed, not only scrolling
+
+The highway shows *where* the notes fall; a method book shows *what they are
+called*. Both are now on screen: `notateBars()` in `utils/rhythm.js` turns the
+engine's attack times into printable events — a note lasts until the next
+attack, which is what makes one hit in a bar a whole note — and `utils/staff.js`
+sets them on a **single line**, because there is no pitch in a rhythm exercise
+and five lines would invite the eye to look for one.
+
+Values, dots, rests, flags, beams and triplet numbers are all set the way they
+would be printed. Beams never cross a beat; a lone short note inside a beamed
+group gets a stub rather than a beam of its own. Spacing is proportional to the
+finest value present, so sixteenths do not sit on top of one another, and a long
+exercise is broken into systems the way a page breaks it.
+
+The setup panel prints the first two bars as a sample; the play view prints the
+exercise actually being played, above the highway, with the current bar washed
+in the section colour.
 
 ## Latency gate
 

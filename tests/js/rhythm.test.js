@@ -446,3 +446,161 @@ test('a run too short to say anything says nothing', () => {
     r.feedOnset(r.notes[0].time);
     assert.equal(r.result().breakdown, null);
 });
+
+// ── Drills that hold one value ────────────────────────────────────────
+// The mixed-cell studies teach reading; holding a single value teaches
+// evenness, because nothing changes to hide a drift behind.
+
+const RHYTHM_LEVELS = require('../../docs/data/rhythm-levels.json');
+
+test('a held-value drill puts the same number of notes in every bar', () => {
+    const held = RHYTHM_LEVELS.filter(l => l.kind === 'ladder' && l.updown === false);
+    assert.ok(held.length >= 3, 'expected the held-value studies');
+    held.forEach((lv) => {
+        const bars = buildExercise(lv, Math.random);
+        const counts = bars.map(b => b.hits.length);
+        assert.equal(new Set(counts).size, 1, lv.label + ' is not uniform: ' + counts.join(','));
+        assert.equal(counts[0], (lv.beatsPerBar || 4) * lv.steps[0], lv.label + ' wrong density');
+    });
+});
+
+test('the notes of a held-value bar are evenly spaced', () => {
+    const lv = RHYTHM_LEVELS.find(l => l.kind === 'ladder' && l.updown === false && l.steps[0] === 4);
+    const bar = buildExercise(lv, Math.random)[0];
+    const gaps = bar.hits.slice(1).map((h, i) => +(h - bar.hits[i]).toFixed(6));
+    assert.equal(new Set(gaps).size, 1);
+    assert.equal(gaps[0], 0.25);
+});
+
+test('the tempo ceiling follows the density, so the game never lies', () => {
+    const byStep = {};
+    RHYTHM_LEVELS.filter(l => l.kind === 'ladder' && l.updown === false)
+        .forEach((l) => { byStep[l.steps[0]] = maxBpmFor(l, 70); });
+    // Finer values must cap lower — that is the whole point of the cap.
+    assert.ok(byStep[8] < byStep[4], 'thirty-seconds must cap below sixteenths');
+    assert.ok(byStep[4] < byStep[2] || byStep[2] > 200, 'sixteenths must cap below eighths');
+    // And a drill must never start above its own ceiling.
+    RHYTHM_LEVELS.forEach((lv) => {
+        assert.ok(lv.bpm <= maxBpmFor(lv, 70),
+            lv.label + ' starts at ' + lv.bpm + ' above its ceiling ' + Math.round(maxBpmFor(lv, 70)));
+    });
+});
+
+test('the studies are shipped in order of difficulty, not of id', () => {
+    // The file's order IS the ladder: the panel renders it as it stands and
+    // numbers the cards by position. Two rules hold across it.
+    //
+    // Note that raw density is NOT one of them — a triplet is three to a beat
+    // and a sixteenth is four, so triplets read as "coarser" while being the
+    // harder idea. They come after sixteenths because they are a new division
+    // of the beat, not a finer one.
+
+    // 1. The held-value studies, which differ in nothing but density, climb.
+    const held = RHYTHM_LEVELS
+        .map((lv, i) => ({ lv, i }))
+        .filter(x => x.lv.kind === 'ladder' && x.lv.updown === false);
+    for (let k = 1; k < held.length; k++) {
+        assert.ok(held[k].i > held[k - 1].i, 'the held studies are out of order');
+        assert.ok(held[k].lv.steps[0] > held[k - 1].lv.steps[0],
+            held[k].lv.label + ' is not denser than ' + held[k - 1].lv.label);
+    }
+
+    // 2. Everything that takes the metronome's support away comes after
+    //    everything played with a click on every beat — and losing it
+    //    altogether is the last thing of all.
+    const supported = (lv) => lv.click === 'all' && !lv.gapOff;
+    const lastSupported = RHYTHM_LEVELS.map(supported).lastIndexOf(true);
+    const firstUnsupported = RHYTHM_LEVELS.map(supported).indexOf(false);
+    assert.ok(firstUnsupported > lastSupported,
+        'a study without a full click sits among the supported ones');
+    assert.ok(RHYTHM_LEVELS[RHYTHM_LEVELS.length - 1].gapOff,
+        'the ladder should end with the click taken away');
+});
+
+test('no two studies are the same exercise', () => {
+    const shape = (lv) => JSON.stringify([lv.kind, lv.cells, lv.steps, lv.updown, lv.pattern, lv.click, lv.gapOff]);
+    const seen = new Map();
+    RHYTHM_LEVELS.forEach((lv) => {
+        const k = shape(lv);
+        assert.ok(!seen.has(k), lv.label + ' repeats ' + seen.get(k));
+        seen.set(k, lv.label);
+    });
+});
+
+test('ids stay unique, because progress is stored under them', () => {
+    const ids = RHYTHM_LEVELS.map(l => l.id);
+    assert.equal(new Set(ids).size, ids.length);
+});
+
+// ── Notation ──────────────────────────────────────────────────────────
+// The engine thinks in attack times; a book prints note values. A note lasts
+// until the next attack, which is what makes one hit in a bar a whole note.
+
+const { notateBars, noteValue } = require('../../docs/utils/rhythm.js');
+
+test('a duration maps to the value a printer would set', () => {
+    const v = (b) => { const x = noteValue(b); return [x.flags, x.dots, x.tuplet]; };
+    assert.deepEqual(v(4), [-2, 0, 1]);          // whole
+    assert.deepEqual(v(2), [-1, 0, 1]);          // half
+    assert.deepEqual(v(3), [-1, 1, 1]);          // dotted half
+    assert.deepEqual(v(1), [0, 0, 1]);           // quarter
+    assert.deepEqual(v(1.5), [0, 1, 1]);         // dotted quarter
+    assert.deepEqual(v(0.5), [1, 0, 1]);         // eighth
+    assert.deepEqual(v(0.75), [1, 1, 1]);        // dotted eighth
+    assert.deepEqual(v(0.25), [2, 0, 1]);        // sixteenth
+    assert.deepEqual(v(0.125), [3, 0, 1]);       // thirty-second
+    assert.deepEqual(v(1 / 3), [1, 0, 3]);       // eighth, three to a beat
+    assert.deepEqual(v(2 / 3), [0, 0, 3]);       // quarter of a triplet
+});
+
+test('a lone attack fills the bar', () => {
+    const [bar] = notateBars([{ hits: [0] }], 4);
+    assert.equal(bar.length, 1);
+    assert.equal(bar[0].rest, false);
+    assert.equal(bar[0].flags, -2);              // a whole note, not a quarter
+});
+
+test('silence before the first attack, and after the last, is written as rests', () => {
+    const [bar] = notateBars([{ hits: [1] }], 4);
+    assert.deepEqual(bar.map(e => e.rest), [true, false]);
+    assert.equal(bar[0].beats, 1);               // a quarter rest
+    assert.equal(bar[1].beats, 3);               // then the note holds to the barline
+});
+
+test('eighths are beamed in pairs, one beat at a time', () => {
+    const [bar] = notateBars([{ hits: [0, 0.5, 1, 1.5] }], 4);
+    const beams = bar.filter(e => !e.rest).map(e => e.beam);
+    assert.equal(beams[0], beams[1]);
+    assert.equal(beams[2], beams[3]);
+    assert.notEqual(beams[0], beams[2], 'a beam must not cross a beat');
+});
+
+test('a beam never joins across a rest', () => {
+    // A sixteenth, then a gap, then two sixteenths: the run is broken.
+    const [bar] = notateBars([{ hits: [0, 0.5, 0.75, 1, 2, 3] }], 4);
+    const first = bar[0];                        // the 16th on the beat
+    const later = bar.filter(e => !e.rest && e.start > 0.4 && e.start < 1);
+    assert.equal(first.beam, later[0].beam, 'these three sit in one beat');
+    assert.equal(first.rest, false);
+});
+
+test('a single flagged note is left with a flag, not given a beam of its own', () => {
+    const [bar] = notateBars([{ hits: [0, 0.5, 1, 2, 3] }], 4);
+    const lone = bar.find(e => Math.abs(e.start - 1) < 1e-6);
+    assert.equal(lone.flags, 0);                 // beat 3 is a quarter here
+    const pair = bar.filter(e => e.start < 1 && !e.rest);
+    assert.equal(pair[0].beam, pair[1].beam);
+    assert.ok(pair[0].beam);
+});
+
+test('every bar is filled exactly, whatever it contains', () => {
+    const levels = RHYTHM_LEVELS;
+    levels.forEach((lv) => {
+        const bars = buildExercise(lv, Math.random);
+        notateBars(bars, lv.beatsPerBar || 4).forEach((evs, i) => {
+            const total = evs.reduce((a, e) => a + e.beats, 0);
+            assert.ok(Math.abs(total - (lv.beatsPerBar || 4)) < 1e-6,
+                lv.label + ' bar ' + (i + 1) + ' adds up to ' + total);
+        });
+    });
+});

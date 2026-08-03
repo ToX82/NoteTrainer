@@ -92,6 +92,12 @@
             </div>
           </div>
           <div class="nt-levels nt-rhythm-levels" id="nt-rhythm-levels"></div>
+          <!-- The drill as it would be printed. The highway teaches where the
+               notes fall; this teaches what they are called on paper. -->
+          <div class="nt-read-preview nt-rhythm-preview" id="nt-rhythm-preview">
+            <div id="nt-rhythm-preview-score"></div>
+            <p class="nt-read-preview-caption" data-i18n="rhythm.printed_caption">The first two bars, as they would be printed.</p>
+          </div>
           <p class="nt-ear-intro" id="nt-rhythm-tip"></p>
           <div class="nt-warn" id="nt-rhythm-warn">
             <svg class="nt-ic"><use href="#nt-i-alert"/></svg>
@@ -140,6 +146,17 @@
               <span class="nt-deck-emoji" aria-hidden="true">🎧</span>
             </div>
             <div class="nt-ear-setup nt-deck-stack">
+              <!-- Which note everything is heard against. Relative pitch is a
+                   skill about distances, so the anchor has to be movable: a
+                   player who only ever hears intervals from C learns C, not
+                   the intervals. -->
+              <div class="nt-option-group">
+                <div class="nt-option-label"><span data-i18n="ear.root">Home note</span>
+                  <span class="nt-option-label-sub" data-i18n="ear.root_hint">(everything is heard against it)</span>
+                </div>
+                <select id="nt-ear-root-pick"></select>
+                <div class="nt-tempo-note nt-option-hint" id="nt-ear-root-note"></div>
+              </div>
               <div class="nt-option-group">
                 <div class="nt-option-label" data-i18n-attr="title:ear.answer_with_hint"><span data-i18n="ear.answer_with">Answer with</span></div>
                 <div class="nt-ear-diff" id="nt-ear-mode">
@@ -151,7 +168,7 @@
                 <input type="checkbox" id="nt-ear-use-home" checked>
                 <span class="nt-toggle-track"><span class="nt-toggle-thumb"></span></span>
                 <span class="nt-toggle-text">
-                  <span class="nt-toggle-title" data-i18n="ear.use_home_title">Play C as reference</span>
+                  <span class="nt-toggle-title" id="nt-ear-use-home-title">Sound the home note</span>
                   <span class="nt-toggle-desc" data-i18n="ear.use_home_desc">Sound the home note before each mystery note. Turn off for a harder challenge (pure absolute pitch).</span>
                 </span>
               </label>
@@ -378,6 +395,15 @@
       </button>
       <div class="nt-read-neck" id="nt-read-neck"></div>
       <div class="nt-feedback" id="nt-read-feedback" style="justify-content:center;"></div>
+      <!-- A missed note stays on screen until the player has done with it: a
+           correction that vanishes on a timer is a correction nobody reads. -->
+      <div class="nt-read-after" id="nt-read-after">
+        <button type="button" class="nt-btn secondary" id="nt-read-retry">
+          <svg class="nt-ic"><use href="#nt-i-replay"/></svg>
+          <span data-i18n="reading.retry">Try this one again</span>
+        </button>
+        <button type="button" class="nt-btn" id="nt-read-continue" data-i18n="reading.continue">Continue</button>
+      </div>
     </div>
   </div>
 
@@ -395,6 +421,10 @@
         <div class="nt-stat"><div class="nt-stat-val" id="nt-rhythm-drift">—</div><div class="nt-stat-lbl" data-i18n="hud.avg_off">Avg off</div></div>
       </div>
     </div>
+
+    <!-- The exercise, printed. It is the same music the highway is scrolling;
+         reading it while playing is the point. -->
+    <div class="nt-panel nt-rhythm-sheet" id="nt-rhythm-sheet"></div>
 
     <div class="nt-panel" style="padding:12px;">
       <canvas id="nt-rhythm-canvas" class="nt-rhythm-canvas"></canvas>

@@ -6,6 +6,7 @@
   "lastEarTier": "easy",
   "earMode": "note",
   "earUseHome": true,
+  "earRootMidi": 60,
   "lastGame": "fret",
   "lastRhythmLevel": null,
   "lastReadingLevel": null,

@@ -222,14 +222,18 @@
         // Results overlay. By default it shows points / accuracy / best combo;
         // pass opts.stats = [{ val, label }, …] to show a different set (the
         // rhythm game leads with its timing numbers instead). opts.extra is
-        // arbitrary HTML appended under the message.
+        // arbitrary HTML appended under the message, and opts.icon is the face
+        // shown when no medal was won.
         function showResults(result, opts) {
             opts = opts || {};
             const wrap = $('nt-results');
             if (!wrap) return;
             $('nt-results-title').textContent = opts.title || T('results.title');
             const medals = { gold: '🥇', silver: '🥈', bronze: '🥉' };
-            $('nt-medal').textContent = medals[result.medal] || '🎸';
+            // With no medal the card still needs a face, and it should be the
+            // face of the game just played — a guitar over a reading result
+            // says the wrong thing.
+            $('nt-medal').textContent = medals[result.medal] || opts.icon || '🎸';
 
             const stats = opts.stats || [
                 { val: String(result.score), label: T('hud.points') },

@@ -715,3 +715,80 @@ test('a hint asked for after the session ended changes nothing', () => {
     assert.equal(s.isFinished(), true);
     assert.equal(s.takeHint(), null);
 });
+
+// ── Repeating a question ──────────────────────────────────────────────
+// A missed note can be tried again straight away. The round has already been
+// recorded, so the repeat is practice: it must not move the score, the streak
+// or the per-position record in either direction.
+
+test('a repeat re-presents the same question', () => {
+    const s = session(NAME_LEVEL);
+    const first = s.nextRound();
+    s.guess(0); s.guess(1);                      // resolved wrong
+    const again = s.repeatRound();
+    assert.equal(again, first);
+    assert.equal(s.state.practice, true);
+});
+
+test('answering a repeat scores nothing, right or wrong', () => {
+    const s = session(NAME_LEVEL);
+    s.nextRound();
+    s.guess(0); s.guess(1);                      // wrong: 1 wrong, combo 0
+    const before = {
+        score: s.state.score, wrong: s.state.wrongCount, correct: s.state.correctCount,
+        stats: JSON.stringify(s.state.stats), combo: s.state.combo,
+    };
+    s.repeatRound();
+    const ev = s.guess(7);                       // right, on the repeat
+    assert.equal(ev.correct, true);
+    assert.equal(ev.practice, true);
+    assert.equal(ev.scoreDelta, 0);
+    assert.equal(s.state.score, before.score);
+    assert.equal(s.state.correctCount, before.correct);
+    assert.equal(s.state.wrongCount, before.wrong);
+    assert.equal(s.state.combo, before.combo);
+    assert.equal(JSON.stringify(s.state.stats), before.stats);
+});
+
+test('a repeat can itself be repeated', () => {
+    const s = session(NAME_LEVEL);
+    s.nextRound();
+    s.guess(0); s.guess(1);
+    s.repeatRound();
+    s.guess(0);
+    assert.equal(s.repeatRound() != null, true);
+    assert.equal(s.state.wrongCount, 1);         // still just the one real miss
+});
+
+test('the next question is scored again', () => {
+    const s = session(NAME_LEVEL);
+    s.nextRound();
+    s.guess(0); s.guess(1);
+    s.repeatRound();
+    s.guess(7);
+    s.nextRound();
+    assert.equal(s.state.practice, false);
+    s.guess(7);
+    assert.equal(s.state.score, 100);
+    assert.equal(s.state.correctCount, 1);
+});
+
+test('a played study can be repeated too, microphone and all', () => {
+    const s = session(PLAY_LEVEL, { octaveStrict: true });
+    s.nextRound();
+    assert.equal(playNote(s, 67).correct, false);   // wrong octave
+    const before = s.state.wrongCount;
+    s.repeatRound();
+    const ev = playNote(s, 55);
+    assert.equal(ev.correct, true);
+    assert.equal(ev.practice, true);
+    assert.equal(s.state.correctCount, 0);
+    assert.equal(s.state.wrongCount, before);
+});
+
+test('a finished session cannot be repeated into', () => {
+    const s = session(NAME_LEVEL, { count: 1 });
+    s.nextRound();
+    s.guess(7);
+    assert.equal(s.repeatRound(), null);
+});

@@ -104,6 +104,14 @@ Page shell: `html, body` are `height: 100%; overflow: hidden` on the practice pa
 - No drill blurb under the rhythm or ear grids — the deck tip covers advice; card `title` holds the full description
 - Fretboard cards: note chips / progress kept; `.nt-lc-mastery` opens on the selected card only
 
+### Rhythm notation (`.nt-rhythm-sheet`, `.nt-rhythm-preview`)
+Single-line staff, `rhythm: true` on the renderer. The sheet sits **above** the highway in the play view — read it while you play — and a two-bar sample sits under the study grid in setup.
+
+- `.note-trainer-staff-beam` is a filled rect, not a stroke: beams are solid bars
+- `.note-trainer-staff-barmark` washes the current bar in `--ms-tempo-light`, behind the notes
+- Spacing is derived from the shortest value in the exercise, so the drawing scales rather than collides
+- Study cards are numbered by **position in the file**, not by id — the file's order is the difficulty ladder
+
 ### Staff (`utils/staff.js`)
 Drawn as bare geometry with `.note-trainer-staff-*` classes; **all colour lives in `theme.css`** so light/dark are handled where every other palette is. Clefs are stroked paths, matching the sprite icons — no music font, no notation library.
 
@@ -119,6 +127,9 @@ Shown inside `#nt-reading` under `.is-read-lesson`, which hides the HUD and the 
 - `.nt-lesson-dots .nt-ldot` — the current one widens to 22px in the section accent; the ones behind it are `--ms-pagina-dark`
 - Actions: *Back* + *Straight to the exercise* (both secondary) + *Next* / *Start the exercise* (primary). Back is hidden on the first card, the skip on the last — where each would be a no-op
 - Shown on every entry to a study, not once: the explanation is never demoted to a button someone has to go looking for
+
+### After a mistake (`.nt-read-after`)
+Two buttons under the feedback line, shown only when a round resolved wrong: *Try this one again* (secondary) + *Continue* (primary). A correct answer auto-advances after 850ms; **a wrong one never auto-advances** — the correction waits for the player.
 
 ### Hint (`.nt-read-hint`)
 A small secondary button under the answers, `opacity: .4` once spent. Available, never loud: a player who does not need it should not be invited, one who does should not have to look.
@@ -148,14 +159,14 @@ Top of the fret panel: real `utils/fretboard.js` on `--ms-fretboard`, compact he
 | BPM picker | Large Fredoka value + unit, then − / range / + |
 | Giudizio / Tolleranza | Iniziatore → Groover → Chirurgo (`easy` / `precise` / `tight`). Default Groover |
 | Rilevamento note | Sensibile → Bilanciato → Severo. Default Sensibile |
-| Latency row | **Not in the deck** — lives in topbar after calibration |
+| Latency row | In the deck, under a rule. Amber and outlined while unmeasured, green once measured — it is the only way to re-measure, so it cannot be hidden |
 | Start | Full-width uppercase CTA (`COMINCIAMO` / `LET'S GO`) + rocket |
 | Tip box | `.nt-tip-box` under Start, dashed border |
 
 **Help on Tempo controls:** each option label has a `?` (`.nt-help`) that opens `.nt-help-tip` on hover / focus. Under the segments, `.nt-option-hint` shows the live explanation for the active choice (timing windows / detection advice). Per-segment `title` attributes remain as secondary tooltips.
 
 **Manico deck:** instrument, tuning, notes, mode (no mic select — input is topbar).
-**Orecchio deck:** answer-with segments + home-note toggle.
+**Orecchio deck:** home-note select (G3–G4) + its live explanation, answer-with segments, home-note toggle.
 **Pagina deck:** clef segments (auto / treble / bass) with a live hint naming the line the clef is named after, plus two teaching toggles (sound every note, show it on the neck).
 
 ### Primary button

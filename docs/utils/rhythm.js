@@ -228,6 +228,95 @@
         return bars;
     }
 
+    // ── Notation ──────────────────────────────────────────────────────────
+    // The engine thinks in attack times; a method book prints note values. This
+    // turns one into the other so the drill can be shown the way it would be
+    // printed — which is how a player is going to meet it everywhere else.
+    //
+    // A note lasts until the next attack (or the barline): that is what makes a
+    // lone hit on beat 1 a whole note and two hits a beat apart two quarters.
+    // The silence before the first attack is a rest, and so is anything left at
+    // the end of the bar.
+
+    // How many flags (or beams) a duration carries. 0 is a quarter, 1 an
+    // eighth, 2 a sixteenth; negative values are the long notes.
+    //   { flags, dots, tuplet }  — tuplet 3 means "three in the time of two".
+    const VALUES = [
+        { beats: 4,     flags: -2, dots: 0, tuplet: 1 },
+        { beats: 3,     flags: -1, dots: 1, tuplet: 1 },
+        { beats: 2,     flags: -1, dots: 0, tuplet: 1 },
+        { beats: 1.5,   flags: 0,  dots: 1, tuplet: 1 },
+        { beats: 1,     flags: 0,  dots: 0, tuplet: 1 },
+        { beats: 2 / 3, flags: 0,  dots: 0, tuplet: 3 },
+        { beats: 0.75,  flags: 1,  dots: 1, tuplet: 1 },
+        { beats: 0.5,   flags: 1,  dots: 0, tuplet: 1 },
+        { beats: 1 / 3, flags: 1,  dots: 0, tuplet: 3 },
+        { beats: 0.375, flags: 2,  dots: 1, tuplet: 1 },
+        { beats: 0.25,  flags: 2,  dots: 0, tuplet: 1 },
+        { beats: 1 / 6, flags: 2,  dots: 0, tuplet: 3 },
+        { beats: 0.125, flags: 3,  dots: 0, tuplet: 1 },
+        { beats: 0.0625, flags: 4, dots: 0, tuplet: 1 },
+    ];
+
+    function noteValue(beats) {
+        let best = VALUES[VALUES.length - 1];
+        let bestErr = Infinity;
+        VALUES.forEach((v) => {
+            const err = Math.abs(v.beats - beats);
+            if (err < bestErr - 1e-9) { bestErr = err; best = v; }
+        });
+        return { flags: best.flags, dots: best.dots, tuplet: best.tuplet, beats: best.beats };
+    }
+
+    /**
+     * bars -> one array of printable events per bar.
+     *   { start, beats, rest, flags, dots, tuplet, beam }
+     * `beam` groups the events a printer would join with a beam: runs of two or
+     * more flagged notes inside one beat. Beams never cross a beat, which is
+     * the rule that makes a printed bar readable at a glance.
+     */
+    function notateBars(bars, beatsPerBar) {
+        const bpb = beatsPerBar || 4;
+        let beamId = 0;
+        return (bars || []).map((bar) => {
+            const hits = (bar.hits || []).slice().sort((a, b) => a - b);
+            const events = [];
+            const push = (start, beats, rest) => {
+                if (beats <= 1e-6) return;
+                const v = noteValue(beats);
+                events.push({ start, beats, rest, flags: v.flags, dots: v.dots, tuplet: v.tuplet, beam: null });
+            };
+            let cursor = 0;
+            hits.forEach((h, i) => {
+                push(cursor, h - cursor, true);                       // silence before it
+                const end = (i + 1 < hits.length) ? hits[i + 1] : bpb;
+                push(h, end - h, false);
+                cursor = end;
+            });
+            push(cursor, bpb - cursor, true);                        // silence to the barline
+
+            // Beam the flagged notes, one beat at a time.
+            let run = [];
+            const flush = () => {
+                if (run.length > 1) { beamId++; run.forEach(e => { e.beam = beamId; }); }
+                run = [];
+            };
+            events.forEach((e) => {
+                const beat = Math.floor(e.start + 1e-6);
+                const breaks = e.rest || e.flags < 1
+                    || (run.length && Math.floor(run[0].start + 1e-6) !== beat);
+                if (breaks) {
+                    flush();
+                    if (!e.rest && e.flags >= 1) run = [e];
+                    return;
+                }
+                run.push(e);
+            });
+            flush();
+            return events;
+        });
+    }
+
     // ── Engine ────────────────────────────────────────────────────────────
     function createRhythm(config) {
         const cfg = Object.assign({}, DEFAULTS, config);
@@ -548,7 +637,7 @@
     }
 
     const api = {
-        createRhythm, buildExercise, syllable, clickBeats, minGapBeats, maxBpmFor,
+        createRhythm, buildExercise, notateBars, noteValue, syllable, clickBeats, minGapBeats, maxBpmFor,
         CELLS, STRICTNESS, DEFAULTS, GRADE_POINTS,
     };
     if (typeof window !== 'undefined') window._noteTrainerRhythm = api;

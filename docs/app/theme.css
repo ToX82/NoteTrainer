@@ -773,7 +773,10 @@ body.nt-page-settings {
   border-radius: var(--ms-r-md);
   background: var(--ms-fretboard);
 }
-.nt-fret-preview .note-trainer-fb-svg { max-height: 72px; }
+/* No height cap: the board is a wide object and the box is wide, so it fills
+   it. Capping the height letterboxed the drawing into the middle third of an
+   otherwise empty panel. */
+.nt-fret-preview .note-trainer-fb-svg { max-height: none; }
 .nt-fret-preview .note-trainer-fb-board { fill: transparent; stroke: transparent; }
 .nt-fret-preview .note-trainer-fb-strlabel { fill: var(--ms-manico); }
 .nt-fret-preview .note-trainer-fb-fretnum { fill: rgba(226, 232, 240, 0.45); }
@@ -906,9 +909,12 @@ body.nt-page-settings {
   font-weight: 500;
   font-size: 12px;
   line-height: 1.35;
-  /* Two lines at most. The grid keeps the three cards the same height, so a
-     tag that wraps costs nothing; a tag that runs on would. */
-  -webkit-line-clamp: 2;
+  /* Three lines at most, and three lines' worth of room always reserved: the
+     row is centred, so a card whose tag runs to three lines while its
+     neighbours use two would sit its title 8px off theirs. Two lines was
+     right when there were three pillars and each card was wider. */
+  min-height: calc(1.35em * 3);
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   display: -webkit-box;
   overflow: hidden;
@@ -1047,16 +1053,42 @@ body.nt-page-settings {
 #nt-panel-rhythm #nt-rhythm-warn,
 #nt-panel-ear #nt-ear-intro { display: none; }
 
-/* Latency lives in the topbar after calibration — not in the deck. */
-.nt-deck-card #nt-latency-row { display: none !important; }
+/* Input delay is a Time setting and lives in the Time deck. It was hidden here
+   for a while on the promise of a top-bar home that was never built, which
+   left a player who had calibrated once with no way to do it again. */
+#nt-latency-row {
+  border-top: 2px solid var(--ms-line);
+  padding-top: 16px;
+}
+#nt-latency-row .nt-tempo-head {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--ms-muted);
+  margin-bottom: 8px;
+}
+.nt-lat-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#nt-latency-row .nt-tempo-val { display: flex; align-items: baseline; gap: 5px; }
+#nt-latency-row .nt-tempo-val b { font-family: var(--ms-display); font-size: 24px; font-weight: 600; }
+#nt-latency-row.is-calibrated .nt-tempo-val b { color: var(--ms-ok-dark); }
+#nt-latency-row:not(.is-calibrated) .nt-tempo-val b { color: var(--ms-gold); }
 
-/* BPM / latency notes stay out of the deck; the option hints under the
-   segmented controls are the explanations players need. */
+/* The BPM note stays out of the deck; the latency one is the whole point of
+   its row — it says whether the figure was measured or merely guessed. */
 .nt-deck-card .nt-ctl .nt-tempo-note { display: none; }
+.nt-deck-card #nt-latency-row .nt-tempo-note {
+  display: block;
+  margin-top: 8px;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
 .nt-deck-stack .nt-option-group .nt-option-hint { display: block; }
 
 /* One meta line per study: what it is on the left, what you scored on the
-   right — so a grid of ten reads down a single column of numbers. */
+   right — so a grid of ten reads down a single column of numbers. `auto`
+   rather than 0 pushes it to the card's floor, so a title that wraps to two
+   lines does not drop its neighbours' meta rows out of line. */
 .nt-ear-levels .nt-lc-foot,
 .nt-reading-levels .nt-lc-foot,
 .nt-rhythm-levels .nt-lc-foot {
@@ -1065,7 +1097,8 @@ body.nt-page-settings {
   justify-content: space-between;
   gap: 10px;
   width: 100%;
-  margin-top: 0;
+  margin-top: auto;
+  padding-top: 8px;
 }
 .nt-lc-best { color: var(--ms-gold); font-weight: 800; font-size: 11.5px; }
 .nt-lc-best .nt-ic { color: var(--ms-gold); }
@@ -1466,14 +1499,13 @@ body.nt-page-settings {
   color: #fff;
 }
 
-/* Hint floats over the topbar — don't shove the whole room down and force scroll. */
+/* The hint floats — it must not shove the whole room down and force scroll. */
 body.has-input-hint .note-trainer-root { padding-top: 100px; }
-@media (max-width: 820px) {
-  body.has-input-hint .note-trainer-root { padding-top: 100px; }
-}
+/* Anchored to the foot of the window, not under the top bar: at the top it
+   covered — and blocked — half the game picker. */
 .nt-input-hint {
   position: fixed;
-  top: 80px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
@@ -1533,10 +1565,14 @@ body.has-input-hint .note-trainer-root { padding-top: 100px; }
 .nt-ih-skip:hover { color: var(--ms-text); }
 
 @media (max-width: 820px) {
-  .nt-topbar { height: auto; flex-wrap: wrap; padding: 10px 14px; }
+  /* The bar wraps to two rows here — 124px measured — so the room below it
+     has to reserve that much, or the first cards hide under the bar. */
+  .nt-topbar { height: auto; min-height: 124px; flex-wrap: wrap; padding: 10px 14px; }
+  .note-trainer-root,
+  body.has-input-hint .note-trainer-root { padding-top: 152px; }
   .nt-input { order: 3; width: 100%; }
   .nt-input-select.nt-input-select { flex: 1; max-width: none; }
-  .nt-input-hint { top: 120px; flex-direction: column; align-items: flex-start; }
+  .nt-input-hint { flex-direction: column; align-items: flex-start; }
   .nt-ih-actions { margin-left: 0; flex-direction: row; align-items: center; }
 }
 
@@ -1551,9 +1587,11 @@ body.has-input-hint .note-trainer-root { padding-top: 100px; }
 }
 .nt-input-volume.is-on { width: 78px; opacity: 1; }
 
+/* Same reason as the hint above: at the top of the window it sat on the game
+   picker. It stacks just above the hint when both are up. */
 .nt-input-tip {
   position: fixed;
-  top: 80px;
+  bottom: 96px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 19;
@@ -1595,8 +1633,9 @@ body.has-input-hint .note-trainer-root { padding-top: 100px; }
 .nt-results-card h2 { margin: 0 0 6px; font-size: 26px; }
 .nt-medal { font-size: 60px; line-height: 1; margin-bottom: 4px; }
 
+.nt-results-stats .nt-stat { flex: 1 1 0; min-width: 0; }
 .nt-results-stats {
-  gap: 28px;
+  gap: 12px;
   margin: 18px 0 14px;
   padding: 16px 0;
   border-top: 2px solid var(--ms-line);
@@ -1656,6 +1695,13 @@ body.has-input-hint .note-trainer-root { padding-top: 100px; }
   border-top: 2px solid var(--ms-line);
   border-radius: 0;
   padding-top: 14px;
+}
+/* When the extra block opens with a foldout, the block's own rule and the
+   foldout's are the same rule drawn twice with a gap between them. */
+#nt-res-extra > .nt-re-diag:first-child {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
 }
 .nt-re-diag > summary { font-size: 13px; font-weight: 800; color: var(--ms-muted); }
 .nt-re-diag > summary:hover { color: var(--ms-text); }
@@ -1902,6 +1948,17 @@ body.has-input-hint .note-trainer-root { padding-top: 100px; }
 /* Back sits apart from the pair that moves you forward. */
 .nt-lesson-actions .nt-btn.nt-lesson-back { min-width: 0; padding: 0 16px; }
 
+.nt-option-label-sub {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ms-faint);
+  margin-left: 6px;
+}
+
+.nt-read-after { margin-top: 2px; }
+.nt-read-after .nt-btn { min-width: 152px; }
+
 /* The hint. Available, never loud — a player who does not need it should not
    be invited to use it, and one who does should not have to look. */
 .nt-read-hint {
@@ -1940,3 +1997,40 @@ body.has-input-hint .note-trainer-root { padding-top: 100px; }
   .note-trainer-staff-note.is-err .note-trainer-staff-head { animation: none; }
   .nt-read-neck { animation: none; }
 }
+
+.nt-rhythm-sheet .note-trainer-staff-svg { width: 100%; height: auto; }
+.nt-rhythm-preview .note-trainer-staff-svg { height: 108px; width: auto; }
+
+/* ── Rhythm notation ───────────────────────────────────────────────── */
+/* One line, because there is no pitch in a rhythm exercise and five lines
+   would invite the eye to look for one. Everything else is set the way a
+   method book sets it. */
+.note-trainer-staff-svg.is-rhythm { height: 132px; }
+.note-trainer-staff-svg.is-rhythm.is-wide { width: 100%; height: auto; }
+
+.note-trainer-staff-beam { fill: var(--ms-text); }
+.note-trainer-staff-rest .is-fill { fill: var(--ms-text); stroke: none; }
+.note-trainer-staff-rest .is-stroke {
+  fill: none;
+  stroke: var(--ms-text);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.note-trainer-staff-tuplet {
+  fill: var(--ms-muted);
+  font-family: var(--ms-font);
+  font-size: 14px;
+  font-weight: 800;
+  font-style: italic;
+  text-anchor: middle;
+}
+/* The bar the player is in, washed behind the notes. */
+.note-trainer-staff-barmark {
+  fill: var(--ms-tempo-light);
+  transition: x .12s linear, opacity .2s ease;
+}
+
+/* Verdicts reach the rests too, so a missed silence reads as one. */
+.note-trainer-staff-note.is-ok .note-trainer-staff-beam { fill: var(--ms-ok); }
+.note-trainer-staff-note.is-err .note-trainer-staff-beam { fill: var(--ms-err); }

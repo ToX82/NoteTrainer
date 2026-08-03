@@ -198,6 +198,7 @@
             wrongCount: 0,
             attempts: 0,
             hinted: false,        // a hint was taken on the current round
+            practice: false,      // the round is being repeated, and scores nothing
             finished: false,
             current: null,
             keySig: keySigs[0],
@@ -347,6 +348,7 @@
             state.round++;
             state.attempts = 0;
             state.hinted = false;
+            state.practice = false;
             _armed = false;              // a played study needs a fresh attack
             _silenceCount = 0;
             _stableMidi = null;
@@ -369,7 +371,31 @@
             s[field]++;
         }
 
+        // Re-present the question just answered, for practice. The round has
+        // already been recorded; a second look is for learning, not for points,
+        // so nothing here touches the score, the streak or the stats.
+        function repeatRound() {
+            const q = state.current;
+            if (!q || state.finished) return null;
+            state.practice = true;
+            state.attempts = 0;
+            state.hinted = false;
+            _armed = false;
+            _silenceCount = 0;
+            _stableMidi = null;
+            _stableCount = 0;
+            return q;
+        }
+
         function settle(q, correct, ev) {
+            if (state.practice) {
+                ev.practice = true;
+                ev.scoreDelta = 0;
+                ev.multiplier = 1;
+                ev.combo = state.combo;
+                ev.finished = state.finished;
+                return ev;
+            }
             bump(q, correct ? 'correct' : 'wrong');
             if (correct) {
                 const mult = comboMultiplier();
@@ -581,7 +607,7 @@
             state, pool, kind, clef, keySigs,
             landmarks: (LANDMARKS[clef] || LANDMARKS.treble).map(p => decorate(parsePitch(p), 0)),
             decorate,
-            nextRound, guess, feed, resolvePlayed, choices, takeHint, nearestLandmark,
+            nextRound, repeatRound, guess, feed, resolvePlayed, choices, takeHint, nearestLandmark,
             comboMultiplier, accuracy, result,
             positionBreakdown, weakestPositions,
             isFinished: () => state.finished,

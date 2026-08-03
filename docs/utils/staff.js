@@ -99,6 +99,57 @@
         return g;
     }
 
+    // ── Rhythm notation ───────────────────────────────────────────────
+    // A rhythm exercise is printed on a single line: there is no pitch in it,
+    // and five lines would invite the eye to look for one. Everything else —
+    // values, dots, rests, flags, beams — is set the way a method book sets it,
+    // because that is how the player will meet these figures everywhere else.
+    const RHYTHM_POS = 4;                 // the line sits where the middle one would
+    const BEAM_H = 5;                     // beam thickness
+    const BEAM_GAP = 8;                   // distance between stacked beams
+
+    // Rests, drawn rather than typed, for the same reason the clefs are.
+    function restGroup(flags, x, y) {
+        const g = el('g', { class: 'note-trainer-staff-rest' });
+        if (flags <= -1) {
+            // A whole rest hangs below the line, a half rest sits on top of it:
+            // the only thing that tells them apart, and it is the real rule.
+            const below = flags <= -2;
+            g.appendChild(el('rect', {
+                x: x - 8, y: below ? y : y - 5, width: 16, height: 5, class: 'is-fill',
+            }));
+            return g;
+        }
+        if (flags === 0) {                // the quarter rest's zigzag
+            g.appendChild(el('path', {
+                class: 'is-stroke',
+                d: 'M' + (x - 4) + ' ' + (y - 15)
+                    + 'L' + (x + 3.5) + ' ' + (y - 7)
+                    + 'L' + (x - 3) + ' ' + (y - 1)
+                    + 'L' + (x + 4.5) + ' ' + (y + 7)
+                    + 'C' + (x + 1) + ' ' + (y + 4) + ',' + (x - 4) + ' ' + (y + 6)
+                    + ',' + (x - 1.5) + ' ' + (y + 14),
+            }));
+            return g;
+        }
+        // Eighth and shorter: a leaning stem with one blob per flag.
+        const top = y - 6 - (flags - 1) * 6;
+        g.appendChild(el('path', {
+            class: 'is-stroke',
+            d: 'M' + (x + 4) + ' ' + top + 'L' + (x - 3) + ' ' + (y + 10),
+        }));
+        for (let k = 0; k < flags; k++) {
+            const by = top + k * 6;
+            g.appendChild(el('circle', { cx: x - 1.5, cy: by, r: 2.6, class: 'is-fill' }));
+            g.appendChild(el('path', {
+                class: 'is-stroke',
+                d: 'M' + (x - 1.5) + ' ' + by + 'Q' + (x + 2) + ' ' + (by - 2.5)
+                    + ',' + (x + 4.2) + ' ' + (by - 1.5),
+            }));
+        }
+        return g;
+    }
+
     function create(container) {
         let svg = null;
         let spec = null;
@@ -186,11 +237,12 @@
             return x + 14;
         }
 
-        function drawTimeSig(timeSig, x) {
+        function drawTimeSig(timeSig, x, line) {
             if (!timeSig) return x;
             [0, 1].forEach(i => {
                 const t = el('text', {
-                    x: x + 10, y: posY(i === 0 ? 6 : 2) + 7,
+                    x: x + 10,
+                    y: line != null ? line + (i === 0 ? -6 : 22) : posY(i === 0 ? 6 : 2) + 7,
                     class: 'note-trainer-staff-timesig',
                 });
                 t.textContent = String(timeSig[i]);
@@ -276,6 +328,108 @@
             return g;
         }
 
+        // ── Rhythm drawing ────────────────────────────────────────────
+        function drawRhythmNote(note, x, index) {
+            const y = posY(RHYTHM_POS);
+            const g = el('g', { class: 'note-trainer-staff-note', 'data-note': index });
+
+            if (note.rest) {
+                g.appendChild(restGroup(note.flags, x, y));
+            } else {
+                const hollow = note.flags < 0;
+                g.appendChild(el('ellipse', {
+                    cx: x, cy: y, rx: NOTE_RX, ry: NOTE_RY,
+                    transform: 'rotate(-20 ' + x + ' ' + y + ')',
+                    class: 'note-trainer-staff-head' + (hollow ? ' is-hollow' : ''),
+                }));
+                // A whole note carries no stem; everything else stems upward,
+                // which on a one-line staff is the only sensible direction.
+                if (note.flags > -2) {
+                    const sx = x + NOTE_RX * 0.92;
+                    g.appendChild(el('line', {
+                        x1: sx, y1: y, x2: sx, y2: y - STEM_LEN,
+                        class: 'note-trainer-staff-stem',
+                    }));
+                    // Unbeamed short notes keep their flags.
+                    if (note.flags >= 1 && !note.beam) {
+                        for (let k = 0; k < note.flags; k++) {
+                            g.appendChild(el('path', {
+                                class: 'note-trainer-staff-flag',
+                                d: flagPath(sx, y - STEM_LEN + k * BEAM_GAP, false),
+                            }));
+                        }
+                    }
+                }
+            }
+            // Dots sit after the head, clear of it.
+            for (let d = 0; d < (note.dots || 0); d++) {
+                g.appendChild(el('circle', {
+                    cx: x + NOTE_RX + 6 + d * 5, cy: y - 5, r: 2.2,
+                    class: 'note-trainer-staff-dot',
+                }));
+            }
+            svg.appendChild(g);
+            noteEls[index] = g;
+            if (note.state) g.classList.add('is-' + note.state);
+            return g;
+        }
+
+        // Beams. Every notehead is on the same line, so a beam is a horizontal
+        // bar — the whole difficulty of beaming pitched music disappears. What
+        // remains is the rule that matters: the first beam spans the group, and
+        // each further beam spans only the runs that are short enough to need
+        // it, with a stub where a run is a single note.
+        function drawBeams(placed) {
+            const groups = {};
+            placed.forEach((p) => {
+                if (p.note.rest || !p.note.beam) return;
+                (groups[p.note.beam] = groups[p.note.beam] || []).push(p);
+            });
+            const y0 = posY(RHYTHM_POS) - STEM_LEN;
+            Object.keys(groups).forEach((id) => {
+                const list = groups[id].sort((a, b) => a.x - b.x);
+                const stemX = (p) => p.x + NOTE_RX * 0.92;
+                const maxFlags = Math.max.apply(null, list.map(p => p.note.flags));
+                for (let level = 1; level <= maxFlags; level++) {
+                    const y = y0 + (level - 1) * BEAM_GAP;
+                    let run = [];
+                    const flush = () => {
+                        if (!run.length) return;
+                        let x1, x2;
+                        if (run.length > 1) { x1 = stemX(run[0]); x2 = stemX(run[run.length - 1]); }
+                        else {
+                            // A lone note at this level gets a stub, pointing
+                            // back toward the group it belongs to.
+                            const only = run[0];
+                            const isFirst = only === list[0];
+                            x1 = isFirst ? stemX(only) : stemX(only) - 11;
+                            x2 = isFirst ? stemX(only) + 11 : stemX(only);
+                        }
+                        svg.appendChild(el('rect', {
+                            x: x1, y: y, width: Math.max(4, x2 - x1), height: BEAM_H,
+                            class: 'note-trainer-staff-beam',
+                        }));
+                        run = [];
+                    };
+                    list.forEach((p) => {
+                        if (p.note.flags >= level) run.push(p);
+                        else flush();
+                    });
+                    flush();
+                }
+                // The tuplet number, over the beam that carries it.
+                const tup = list[0].note.tuplet;
+                if (tup > 1) {
+                    const t = el('text', {
+                        x: (stemX(list[0]) + stemX(list[list.length - 1])) / 2,
+                        y: y0 - 7, class: 'note-trainer-staff-tuplet',
+                    });
+                    t.textContent = String(tup);
+                    svg.appendChild(t);
+                }
+            });
+        }
+
         // ── Public API ────────────────────────────────────────────────
         // One renderer serves both shapes the game needs: a question (one or
         // two notes, large and centred) and a phrase to be read in time (bars
@@ -284,6 +438,7 @@
             spec = Object.assign({
                 clef: 'treble', keySig: 0, timeSig: null, notes: [],
                 beatsPerBar: 4, noteGap: 74, leadGap: 30, ghostRoom: true,
+                rhythm: false,          // one line, note values, no pitch
                 // 'height' keeps every question the same size whatever it
                 // contains; 'width' lets a long phrase use the whole panel.
                 fit: 'height',
@@ -305,6 +460,8 @@
             const tailGap = spec.leadGap
                 + ((timed || !spec.ghostRoom) ? 0 : spec.noteGap * 0.72);
             width = Math.round(headWidth + spec.leadGap + span * spec.noteGap + tailGap);
+
+            if (spec.rhythm) return renderRhythm(headWidth, span);
 
             const ext = extents(notes, clef);
             viewTop = posY(ext.hi);
@@ -344,6 +501,75 @@
             spec._first = first;
             spec._clef = clef;
             return svg;
+        }
+
+        // A rhythm exercise, set the way a book would set it.
+        function renderRhythm(headWidth, span) {
+            const line = posY(RHYTHM_POS);
+            // Sixteenths at the spacing quarters want would sit on top of one
+            // another. The beat gets whatever width its finest value needs for
+            // two noteheads to stand clear, and the drawing scales to fit.
+            const shortest = (spec.notes || []).reduce(
+                (m, n) => Math.min(m, n.beats || 1), 1);
+            const need = (NOTE_RX * 2 + 9) / Math.max(shortest, 1 / 32);
+            const gap = Math.max(spec.noteGap, need);
+            spec.noteGap = gap;
+
+            width = Math.round(headWidth + spec.leadGap + span * gap + spec.leadGap);
+            viewTop = line - STEM_LEN - 26;
+            viewHeight = (line + 34) - viewTop;
+            reset((spec.fit === 'width' ? 'is-wide' : '') + ' is-rhythm');
+
+            let x = 22;
+            x = drawTimeSig(spec.timeSig, x, line);
+            const first = x + spec.leadGap;
+            spec._first = first;
+
+            // Barlines first, so ink always sits over them. The last one ends
+            // the system, and the line stops there rather than trailing off.
+            let lastBar = width - 12;
+            if (spec.beatsPerBar) {
+                for (let b = spec.beatsPerBar; b <= span + 1e-6; b += spec.beatsPerBar) {
+                    lastBar = first + b * gap - gap * 0.34;
+                    svg.appendChild(el('line', {
+                        x1: lastBar, y1: line - 17, x2: lastBar, y2: line + 17,
+                        class: 'note-trainer-staff-bar',
+                    }));
+                }
+            }
+            svg.insertBefore(el('line', {
+                x1: 14, y1: line, x2: lastBar, y2: line,
+                class: 'note-trainer-staff-line',
+            }), svg.firstChild);
+            width = Math.round(lastBar + 14);
+            svg.setAttribute('viewBox', '0 ' + viewTop + ' ' + width + ' ' + viewHeight);
+
+            const placed = (spec.notes || []).map((n, i) => {
+                const nx = first + n.beat * spec.noteGap;
+                drawRhythmNote(n, nx, i);
+                return { note: n, x: nx };
+            });
+            drawBeams(placed);
+
+            const band = el('rect', {
+                x: 0, y: viewTop, width: 0, height: viewHeight,
+                class: 'note-trainer-staff-barmark', opacity: 0,
+            });
+            band.setAttribute('data-barmark', '1');
+            svg.insertBefore(band, svg.firstChild);
+            return svg;
+        }
+
+        // Which bar the player is in, washed behind the notes.
+        function markBar(index) {
+            if (!svg || !spec) return;
+            const band = svg.querySelector('[data-barmark]');
+            if (!band) return;
+            if (index == null || !spec.beatsPerBar) { band.setAttribute('opacity', 0); return; }
+            const w = spec.beatsPerBar * spec.noteGap;
+            band.setAttribute('x', (spec._first || 60) + index * w - spec.noteGap * 0.34);
+            band.setAttribute('width', w);
+            band.setAttribute('opacity', 1);
         }
 
         function setState(index, state) {
@@ -423,7 +649,7 @@
             svg = null; spec = null; noteEls = [];
         }
 
-        return { render, setState, setStates, ghost, guide, playhead, noteCenter, clear,
+        return { render, setState, setStates, ghost, guide, playhead, markBar, noteCenter, clear,
                  get svg() { return svg; } };
     }
 

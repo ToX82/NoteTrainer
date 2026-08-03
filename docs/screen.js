@@ -33,6 +33,7 @@
         ear: null,                 // ear-training engine (mode 'ear')
         earTier: 'easy',           // ear difficulty, chosen inside the minigame
         earMode: 'note',           // ear answer style: 'note' | 'interval'
+        earRootMidi: 60,           // the note everything is heard against (C4)
         earUseHome: true,          // ear training: play the C reference before the target
         earBusy: false,            // locked while a tone plays / between rounds
         bound: false,
@@ -52,6 +53,8 @@
         rhythmCalibrated: false,
         rhythmBpm: {},             // levelId -> the tempo climbed to (notch method)
         rhythmRaf: null,
+        rhythmSheet: [],           // the printed exercise, one entry per system
+        rhythmSheetBar: -1,        // which bar is washed right now
         rhythmT0Perf: 0,           // timeline origin on the performance.now() clock
         rhythmT0Ctx: 0,            // the same origin on the AudioContext clock
         rhythmClickIdx: 0,         // next click to schedule
@@ -681,6 +684,7 @@
         S.root.classList.remove('is-rhythm');
         S.root.classList.remove('is-reading', 'is-read-sight', 'is-read-played', 'is-read-lesson');
         S.lesson = null;
+        showReadingAfter(false);
         S.ui.$('nt-stop').style.display = 'none';
         S.ui.hideResults();
         if (S.config) refreshSelection();
@@ -819,7 +823,7 @@
         await saveProgress(patch);
         S.running = false;
         if (window._noteTrainerAudio) window._noteTrainerAudio.stop();
-        S.ui.showResults(result, { title: T('results.title'), message });
+        S.ui.showResults(result, { title: T('results.title'), message, icon: '🎸' });
         recordSession('fret', result);
     }
 
@@ -947,6 +951,47 @@
         box.style.display = '';
     }
 
+    // Relative pitch is a skill about distances, so the anchor has to move: a
+    // player who only ever hears intervals from C ends up learning C. The pool
+    // and the per-interval record are both keyed by OFFSET from the root, so
+    // everything a player has built up survives the change.
+    const EAR_ROOT_LO = 55, EAR_ROOT_HI = 67;      // G3 … G4, a comfortable octave
+
+    function renderEarRoot() {
+        const sel = S.ui.$('nt-ear-root-pick');
+        if (sel) {
+            if (sel.options.length !== EAR_ROOT_HI - EAR_ROOT_LO + 1) {
+                sel.innerHTML = '';
+                for (let midi = EAR_ROOT_LO; midi <= EAR_ROOT_HI; midi++) {
+                    const o = document.createElement('option');
+                    o.value = String(midi);
+                    // Short name here: the full form is "Do (C)" in Italian and
+                    // gluing an octave onto it reads as "Do (C)4".
+                    o.textContent = M().shortNameOf(M().pitchClass(midi), false) + M().octaveOf(midi);
+                    sel.appendChild(o);
+                }
+            }
+            sel.value = String(S.earRootMidi);
+        }
+        const name = M().nameOf(M().pitchClass(S.earRootMidi), false);
+        const note = S.ui.$('nt-ear-root-note');
+        if (note) note.textContent = T('ear.root_note', { note: name });
+        const title = S.ui.$('nt-ear-use-home-title');
+        if (title) title.textContent = T('ear.use_home_title', { note: name });
+        const badge = S.ui.$('nt-ear-root');
+        if (badge) badge.textContent = name;
+    }
+
+    function setEarRoot(midi) {
+        const val = Math.max(EAR_ROOT_LO, Math.min(EAR_ROOT_HI, Number(midi) || 60));
+        if (val === S.earRootMidi) { renderEarRoot(); return; }
+        S.earRootMidi = val;
+        saveProgress({ earRootMidi: val });
+        renderEarRoot();
+        renderEarDiff();
+        if (S.running && S.gameKind === 'ear') startEar();   // restart on the new anchor
+    }
+
     function setEarTier(tier) {
         if (!tier || tier === S.earTier) { renderEarDiff(); return; }
         S.earTier = tier;
@@ -1000,7 +1045,10 @@
         saveProgress({ lastMode: 'ear', lastEarTier: tier });
         // Carry the player's lifetime per-interval record in so the picker
         // over-samples whatever they keep getting wrong (adaptive practice).
-        S.ear = window._noteTrainerEar.createEar({ tier, rounds: 10, priorStats: S.config.earStats || {} });
+        S.ear = window._noteTrainerEar.createEar({
+            tier, rounds: 10, rootMidi: S.earRootMidi,
+            priorStats: S.config.earStats || {},
+        });
         S.earBusy = false;
         renderEarDiff();
 
@@ -1158,8 +1206,13 @@
     function guessContrast(ev) {
         if (ev.guessPc === ev.expectedPc) return '';
         if (S.earMode === 'interval') {
-            const g = M().intervalName(ev.guessPc);
-            const d = ev.expectedPc - ev.guessPc;     // root is C, so pc === offset
+            // Offsets, not pitch classes: with a movable root the two stopped
+            // being the same number, and the difference has to be measured the
+            // short way round the twelve or a minor 2nd reads as a major 7th.
+            const rootPc = M().pitchClass(S.ear ? S.ear.rootMidi : S.earRootMidi);
+            const off = (pc) => (((pc - rootPc) % 12) + 12) % 12;
+            const g = M().intervalName(off(ev.guessPc));
+            const d = off(ev.expectedPc) - off(ev.guessPc);
             const n = Math.abs(d);
             return ' ' + T(d > 0 ? 'ear.said_narrower' : 'ear.said_wider',
                 { guess: g.long, count: n, semitones: T('ear.semitones', { count: n }) });
@@ -1275,7 +1328,7 @@
         if (weak.length) {
             message += ' ' + T('results.toughest', { list: weak.map(w => w.interval.long).join(', ') });
         }
-        S.ui.showResults(result, { title: T('results.ear_title'), message });
+        S.ui.showResults(result, { title: T('results.ear_title'), message, icon: '🎧' });
         recordSession('ear', result);
     }
 
@@ -1344,7 +1397,7 @@
         if (!wrap) return;
         wrap.innerHTML = '';
         renderReadingPreview();
-        S.readingLevels.forEach(lv => {
+        S.readingLevels.forEach((lv, i) => {
             const key = 'reading:' + lv.id;
             const medal = S.config.medals[key];
             const best = S.config.bestScores[key];
@@ -1353,7 +1406,7 @@
             card.title = T('reading.levels.' + lv.id + '.desc', null, lv.desc);
             card.innerHTML =
                 (medal ? '<span class="nt-lc-medal">' + MEDAL_EMOJI[medal] + '</span>' : '')
-                + '<span class="nt-lc-num">' + lv.id + '</span>'
+                + '<span class="nt-lc-num">' + (i + 1) + '</span>'
                 + '<span class="nt-lc-title">'
                 + T('reading.levels.' + lv.id + '.label', null, lv.label) + '</span>'
                 + '<div class="nt-lc-foot">'
@@ -1632,6 +1685,7 @@
         S.ui.$('nt-read-neck').innerHTML = '';
         renderReadingQuestion(q);
         resetReadingHint();
+        showReadingAfter(false);
         readingHud();
     }
 
@@ -1833,12 +1887,49 @@
         readingHud();
         const btn = S.ui.$('nt-read-hint');
         if (btn) btn.disabled = true;
-        setTimeout(() => {
-            if (!S.running) return;
-            S.readingBusy = false;
-            if (ev.finished) finishReading();
-            else nextReadingRound();
-        }, ev.correct ? 850 : 1900);
+
+        // A right answer moves on by itself — there is nothing to study in it.
+        // A wrong one does not: the correction stays up, with the neck and the
+        // answer beside the note, until the player has taken it in and says so.
+        // On a timer they never finish reading it.
+        if (ev.correct) {
+            setTimeout(() => {
+                if (!S.running) return;
+                S.readingBusy = false;
+                if (ev.finished) finishReading();
+                else nextReadingRound();
+            }, 850);
+            return;
+        }
+        showReadingAfter(true);
+    }
+
+    // The two ways out of a mistake: read it again, or go on.
+    function showReadingAfter(on) {
+        const box = S.ui.$('nt-read-after');
+        if (box) box.classList.toggle('is-open', !!on);
+    }
+
+    function onReadingRetry() {
+        if (!S.running || !S.reading) return;
+        const q = S.reading.repeatRound();
+        if (!q) { onReadingContinue(); return; }
+        showReadingAfter(false);
+        S.ui.$('nt-read-feedback').textContent = '';
+        S.ui.$('nt-read-feedback').className = 'nt-feedback';
+        S.ui.$('nt-read-heard').textContent = '';
+        S.ui.$('nt-read-neck').innerHTML = '';
+        renderReadingQuestion(q);
+        resetReadingHint();
+        S.readingBusy = false;
+    }
+
+    function onReadingContinue() {
+        if (!S.running || !S.reading) return;
+        showReadingAfter(false);
+        S.readingBusy = false;
+        if (S.reading.isFinished()) finishReading();
+        else nextReadingRound();
     }
 
     // Name what happened, then what to do about it. The wrong-octave case is
@@ -1940,6 +2031,7 @@
         S.ui.$('nt-read-choices').innerHTML = '';
         const hintBtn = S.ui.$('nt-read-hint');
         if (hintBtn) hintBtn.style.display = 'none';
+        showReadingAfter(false);
         S.ui.$('nt-read-neck').innerHTML = '';
         S.ui.$('nt-read-feedback').textContent = '';
         S.ui.$('nt-read-feedback').className = 'nt-feedback';
@@ -2115,6 +2207,7 @@
         S.ui.showResults(res, {
             title: T('results.reading_title'),
             message,
+            icon: '🎼',
             extra: readingPositionTable(res),
         });
         recordSession('reading', res, { readingKind: lv ? lv.kind : 'name' });
@@ -2188,11 +2281,85 @@
     // The same thing said in the space a grid cell has.
     const clickShort = (click) => T('rhythm.click_short.' + click, null, click);
 
+    // ── The drill, printed ────────────────────────────────────────────
+    // The highway shows where the notes fall; this shows what they are called
+    // on paper. A player who only ever meets a rhythm as a moving lane cannot
+    // read it out of a book afterwards, which is where they will find it.
+    //
+    // Long exercises are broken into systems the way a page would break them:
+    // the finer the values, the fewer bars fit on a line and still be legible.
+    function renderRhythmScore(host, bars, beatsPerBar, opts) {
+        if (!host || !window._noteTrainerStaff || !R() || !bars || !bars.length) {
+            if (host) host.innerHTML = '';
+            return [];
+        }
+        const o = opts || {};
+        const bpb = beatsPerBar || 4;
+        const notated = R().notateBars(bars, bpb);
+
+        // The narrowest value anywhere decides how much room a beat needs, and
+        // therefore how many bars a line can hold.
+        let shortest = 1;
+        notated.forEach(bar => bar.forEach(e => { shortest = Math.min(shortest, e.beats); }));
+        const perBeat = 28 / Math.max(shortest, 1 / 32);
+        const perSystem = Math.max(1, Math.min(o.maxBars || 4,
+            Math.floor((o.width || 1000) / (perBeat * bpb))));
+
+        host.innerHTML = '';
+        const systems = [];
+        for (let i = 0; i < notated.length; i += perSystem) {
+            const slice = notated.slice(i, i + perSystem);
+            const notes = [];
+            slice.forEach((bar, b) => bar.forEach(e => {
+                notes.push(Object.assign({}, e, { beat: b * bpb + e.start }));
+            }));
+            const div = document.createElement('div');
+            host.appendChild(div);
+            const staff = window._noteTrainerStaff(div);
+            staff.render({
+                rhythm: true,
+                timeSig: i === 0 ? [bpb, 4] : null,
+                beatsPerBar: bpb,
+                totalBeats: slice.length * bpb,
+                noteGap: perBeat,
+                fit: o.fit || 'width',
+                notes,
+            });
+            systems.push({ staff, from: i, to: i + slice.length - 1 });
+        }
+        return systems;
+    }
+
+    // Wash the bar the player is in, across whichever system holds it.
+    function markRhythmBar(systems, barIndex) {
+        (systems || []).forEach((sys) => {
+            const inside = barIndex != null && barIndex >= sys.from && barIndex <= sys.to;
+            sys.staff.markBar(inside ? barIndex - sys.from : null);
+        });
+    }
+
+    function renderRhythmPreview() {
+        const box = S.ui.$('nt-rhythm-preview');
+        const host = S.ui.$('nt-rhythm-preview-score');
+        const lv = currentRhythmLevel();
+        if (!box || !host) return;
+        if (!lv || !R()) { box.style.display = 'none'; return; }
+        // Two bars is a sample, not the exercise: enough to show what the
+        // figures look like without pretending to be the run itself.
+        const bars = R().buildExercise(Object.assign({}, lv, { bars: 2 }), Math.random)
+            .slice(0, 2);
+        renderRhythmScore(host, bars, lv.beatsPerBar || 4, { maxBars: 2, fit: 'height' });
+        box.style.display = '';
+    }
+
     function renderRhythmLevels() {
         const wrap = S.ui.$('nt-rhythm-levels');
         if (!wrap) return;
         wrap.innerHTML = '';
-        S.rhythmLevels.forEach(lv => {
+        // The number on a card is its POSITION in the ladder. Ids are identity
+        // — medals and best scores are stored under them — so they stay put
+        // while the order of the file is free to say what comes after what.
+        S.rhythmLevels.forEach((lv, i) => {
             const key = 'rhythm:' + lv.id;
             const medal = S.config.medals[key];
             const best = S.config.bestScores[key];
@@ -2205,7 +2372,7 @@
             // are spelled out under the grid instead.
             card.innerHTML =
                 (medal ? '<span class="nt-lc-medal">' + MEDAL_EMOJI[medal] + '</span>' : '')
-                + '<span class="nt-lc-num">' + lv.id + '</span>'
+                + '<span class="nt-lc-num">' + (i + 1) + '</span>'
                 + '<span class="nt-lc-title">'
                 + T('rhythm.levels.' + lv.id + '.label', null, lv.label) + '</span>'
                 + '<div class="nt-lc-foot">'
@@ -2276,6 +2443,8 @@
             sn2.innerHTML = T('rhythm.sens_note.' + S.rhythmSensitivity, null,
                 T('rhythm.sens_note.balanced'));
         }
+
+        renderRhythmPreview();
 
         const tip = S.ui.$('nt-rhythm-tip');
         if (tip) {
@@ -2377,6 +2546,9 @@
             promote: lv.promote,
             countInBars: 2,
         });
+        S.rhythmSheet = renderRhythmScore(
+            S.ui.$('nt-rhythm-sheet'), bars, lv.beatsPerBar || 4, { maxBars: 4 });
+        S.rhythmSheetBar = -1;
         S.rhythmClickIdx = 0;
         S.rhythmStrengths = [];
         S.rhythmGhosts = 0;
@@ -2506,6 +2678,12 @@
         const bar = Math.floor((now - r.countInMs) / r.barMs) + 1;
         S.ui.$('nt-rhythm-bar').textContent =
             Math.max(0, Math.min(bar, r.bars.length)) + '/' + r.bars.length;
+        const sheetBar = (now < r.countInMs) ? -1
+            : Math.max(0, Math.min(bar - 1, r.bars.length - 1));
+        if (sheetBar !== S.rhythmSheetBar) {
+            S.rhythmSheetBar = sheetBar;
+            markRhythmBar(S.rhythmSheet, sheetBar < 0 ? null : sheetBar);
+        }
 
         const t = r.timing();
         S.ui.$('nt-rhythm-drift').textContent = t.samples < 3 ? '—'
@@ -2572,6 +2750,10 @@
 
     function stopRhythmLoop() {
         if (S.rhythmRaf) { cancelAnimationFrame(S.rhythmRaf); S.rhythmRaf = null; }
+        S.rhythmSheet = [];
+        S.rhythmSheetBar = -1;
+        const sheet = S.ui && S.ui.$('nt-rhythm-sheet');
+        if (sheet) sheet.innerHTML = '';
     }
 
     // Turn the raw numbers into the sentence a teacher would actually say. Bias
@@ -2845,6 +3027,7 @@
         S.ui.showResults(res, {
             title: T('results.rhythm_title'),
             message,
+            icon: '⏱️',
             stats: [
                 { val: Math.round(res.accuracy * 100) + '%', label: T('stat.in_time') },
                 { val: (mean > 0 ? '+' : '') + mean + 'ms', label: T('stat.avg_offset') },
@@ -3389,6 +3572,7 @@
             bestScores: {}, medals: {}, levelStrings: {}, stats: {}, earStats: {},
             achievements: [], lifetime: { correct: 0, wrong: 0, sessions: 0 },
             maxFret: 12, lastEarTier: 'easy', earMode: 'note', earUseHome: true,
+            earRootMidi: 60,
             lastGame: 'fret', rhythmStrictness: 'precise', rhythmSensitivity: 'sensitive',
             rhythmLatencyMs: null,
             rhythmBpm: {}, rhythmStats: {}, lastRhythmLevel: null,
@@ -3418,11 +3602,15 @@
         if (S.config.lastEarTier) S.earTier = S.config.lastEarTier;
         if (S.config.earMode === 'interval' || S.config.earMode === 'note') S.earMode = S.config.earMode;
         if (typeof S.config.earUseHome === 'boolean') S.earUseHome = S.config.earUseHome;
+        if (typeof S.config.earRootMidi === 'number') {
+            S.earRootMidi = Math.max(EAR_ROOT_LO, Math.min(EAR_ROOT_HI, S.config.earRootMidi));
+        }
         const useHomeEl = S.ui.$('nt-ear-use-home');
         if (useHomeEl) useHomeEl.checked = S.earUseHome;
         applyEarUseHome();
         if (S.config.lastMode && S.config.lastMode !== 'ear') S.ui.$('nt-mode').value = S.config.lastMode;
         S.mode = S.ui.$('nt-mode').value;
+        renderEarRoot();
         renderEarDiff();
         renderEarMode();
 
@@ -3475,6 +3663,8 @@
             b.addEventListener('click', () => setEarMode(b.getAttribute('data-mode')));
         });
         if (useHomeEl) useHomeEl.addEventListener('change', () => setEarUseHome(useHomeEl.checked));
+        const earRootSel = S.ui.$('nt-ear-root-pick');
+        if (earRootSel) earRootSel.addEventListener('change', () => setEarRoot(earRootSel.value));
         S.ui.$('nt-ear-replay').addEventListener('click', () => {
             if (S.ear && S.ear.state.current && !S.ear.isFinished()) playEarSequence(S.ear.state.current);
         });
@@ -3496,6 +3686,10 @@
         if (lessonBackBtn) lessonBackBtn.addEventListener('click', lessonBack);
         const hintBtn = S.ui.$('nt-read-hint');
         if (hintBtn) hintBtn.addEventListener('click', onReadingHint);
+        const retryBtn = S.ui.$('nt-read-retry');
+        if (retryBtn) retryBtn.addEventListener('click', onReadingRetry);
+        const continueBtn = S.ui.$('nt-read-continue');
+        if (continueBtn) continueBtn.addEventListener('click', onReadingContinue);
         if (neckEl) neckEl.addEventListener('change', () => setReadingNeckHelp(neckEl.checked));
 
         // Rhythm-training controls.
