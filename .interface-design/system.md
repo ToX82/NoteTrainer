@@ -199,7 +199,7 @@ Musician-facing Italian first in the mockup; EN mirrors the same roles.
 
 | Default | Instead |
 |---------|---------|
-| Single Duolingo green accent | Four musical section colors |
+| Single green accent | Four musical section colors |
 | System / Inter-only type | Fredoka + Plus Jakarta Sans |
 | Flat equal cards, no press | Chunky bottom-edge pressables |
 | Sidebar painted a different hue | Same canvas; border + workspace columns |
