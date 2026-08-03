@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { createOnsetDetector } = require('../../docs/utils/onset.js');
+const { createOnsetDetector } = require('../../games/utils/onset.js');
 
 const SR = 48000;
 const BLOCK = 2048;                       // the capture block size audio.js uses
@@ -321,7 +321,7 @@ test('a deeper beat still detects every note, even if some tails slip through', 
 // meant to play, and when. Running every tier over that same audio turns the
 // setting from a preference into a measurement.
 
-const { coverage, pickSensitivity, SENSITIVITY, optionsFor } = require('../../docs/utils/onset.js');
+const { coverage, pickSensitivity, SENSITIVITY, optionsFor } = require('../../games/utils/onset.js');
 
 test('coverage counts notes accounted for, not attacks reported', () => {
     const expected = [0, 600, 1200, 1800];

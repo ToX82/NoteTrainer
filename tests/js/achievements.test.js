@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { evaluate, DEFINITIONS } = require('../../docs/utils/achievements.js');
+const { evaluate, DEFINITIONS } = require('../../games/utils/achievements.js');
 
 function ctx(extra) {
     return Object.assign({

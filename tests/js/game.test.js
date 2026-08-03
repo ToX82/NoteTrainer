@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { createGame } = require('../../docs/utils/game.js');
+const { createGame } = require('../../games/utils/game.js');
 
 const OPEN = [40, 45, 50, 55, 59, 64]; // standard guitar
 

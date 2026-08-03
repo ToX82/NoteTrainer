@@ -1,7 +1,7 @@
 {
   "name": "note-trainer",
   "private": true,
-  "description": "Note Trainer — static web app. The tests cover the game logic under docs/utils and docs/workers.",
+  "description": "Note Trainer — static web app. The tests cover the game logic under games/utils and games/workers.",
   "scripts": {
     "test": "node --test tests/js/",
     "check": "node --test tests/js/ && python3 tools/check-i18n.py"

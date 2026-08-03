@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const {
     createRhythm, buildExercise, syllable, clickBeats, minGapBeats, maxBpmFor,
     CELLS, STRICTNESS,
-} = require('../../docs/utils/rhythm.js');
+} = require('../../games/utils/rhythm.js');
 
 // A deterministic two-bar exercise: four quarters per bar at 60 BPM, so one
 // beat is exactly 1000ms and the arithmetic in the assertions stays readable.
@@ -310,7 +310,7 @@ test('the tempo ceiling keeps attacks resolvable', () => {
 // ── Curriculum data ───────────────────────────────────────────────────────
 
 test('every shipped drill builds and stays inside its tempo ceiling', () => {
-    const levels = require('../../docs/data/rhythm-levels.json');
+    const levels = require('../../games/data/rhythm-levels.json');
     assert.ok(levels.length >= 8, 'the curriculum should cover the ground');
     const seen = new Set();
     levels.forEach(lv => {
@@ -343,7 +343,7 @@ test('every shipped drill builds and stays inside its tempo ceiling', () => {
 });
 
 test('the gap-click drill really does go silent', () => {
-    const levels = require('../../docs/data/rhythm-levels.json');
+    const levels = require('../../games/data/rhythm-levels.json');
     const gap = levels.find(l => l.gapOff);
     assert.ok(gap, 'the curriculum should include a gap-click drill');
     const bars = buildExercise(gap, () => 0.5);
@@ -451,7 +451,7 @@ test('a run too short to say anything says nothing', () => {
 // The mixed-cell studies teach reading; holding a single value teaches
 // evenness, because nothing changes to hide a drift behind.
 
-const RHYTHM_LEVELS = require('../../docs/data/rhythm-levels.json');
+const RHYTHM_LEVELS = require('../../games/data/rhythm-levels.json');
 
 test('a held-value drill puts the same number of notes in every bar', () => {
     const held = RHYTHM_LEVELS.filter(l => l.kind === 'ladder' && l.updown === false);
@@ -536,7 +536,7 @@ test('ids stay unique, because progress is stored under them', () => {
 // The engine thinks in attack times; a book prints note values. A note lasts
 // until the next attack, which is what makes one hit in a bar a whole note.
 
-const { notateBars, noteValue } = require('../../docs/utils/rhythm.js');
+const { notateBars, noteValue } = require('../../games/utils/rhythm.js');
 
 test('a duration maps to the value a printer would set', () => {
     const v = (b) => { const x = noteValue(b); return [x.flags, x.dots, x.tuplet]; };
